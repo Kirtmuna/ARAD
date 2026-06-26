@@ -5,7 +5,7 @@ import net.minecraft.util.math.BlockPos;
 
 public final class SectionSlot {
 
-    public static final double CAPTURE_RADIUS = 2.0;
+    public static final double CAPTURE_RADIUS = 5.0;
 
     public static final int MAP_SIZE = 8;
 
