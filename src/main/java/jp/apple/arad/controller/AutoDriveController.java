@@ -64,8 +64,8 @@ public final class AutoDriveController {
     private static final float ARRIVE_SPEED_OUT = 0.05f;
     private static final double STATION_CAPTURE_DIST = ARRIVE_DIST_OUT + 1.2;
     private static final double STOP_BUFFER = 0.35;
-    private static final double BRAKE_HYSTERESIS = 6.0;
-    private static final double PHASE_MARGIN = 1.15;
+    private static final double BRAKE_HYSTERESIS = 3.0;
+    private static final double PHASE_MARGIN = 1.05;
     private static final int PHASE_LEVEL = 5;
     private static final float LAUNCH_FORCE_SPEED = 0.04f;
     private static final int LAUNCH_FORCE_NOTCH = 3;
@@ -80,7 +80,7 @@ public final class AutoDriveController {
 
     private static final float SECTION_APPROACH_MARGIN_KMH = 15.0f;
 
-    private static final double SECTION_STOP_PHASE_MARGIN = 1.2;
+    private static final double SECTION_STOP_PHASE_MARGIN = 1.05;
     private static final int SLOT_CHECK_INTERVAL = 4;
     private final long formationId;
     private final String routeId;
@@ -135,16 +135,16 @@ public final class AutoDriveController {
     }
 
     private static int calcStopNotch(double dist, float speed, float[] decel) {
-        if (dist <= 0.45)
+        if (dist <= 0.35)
             return NOTCH_FULL_BRAKE;
         float baseDecel = decel[4];
-        double idealSpeed = Math.sqrt(Math.max(0.0, 2.0 * baseDecel * Math.max(dist - 0.25, 0.0)));
+        double idealSpeed = Math.sqrt(Math.max(0.0, 2.0 * baseDecel * Math.max(dist - 0.05, 0.0)));
         double err = speed - idealSpeed;
-        if (err > 0.03)
+        if (err > 0.015)
             return NOTCH_FULL_BRAKE;
-        if (err > 0.01)
+        if (err > 0.005)
             return -3;
-        if (dist > 4.0 && err < -0.05)
+        if (dist > 2.5 && err < -0.05)
             return 1;
         return 0;
     }
