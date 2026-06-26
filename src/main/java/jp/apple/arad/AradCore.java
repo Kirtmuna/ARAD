@@ -26,7 +26,7 @@ import org.apache.logging.log4j.Logger;
 
 import static jp.apple.AppleLib.tabAppleLib;
 
-@Mod(modid = "arad", name = "ARAD", version = "1.0.0", dependencies = "required-after:rtm")
+@Mod(modid = "arad", name = "ARAD", version = "1.1.1", dependencies = "required-after:rtm")
 
 public class AradCore {
 
