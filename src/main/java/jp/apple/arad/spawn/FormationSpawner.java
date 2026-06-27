@@ -92,29 +92,13 @@ public final class FormationSpawner {
     }
 
     private static float calcSpawnYaw(RailMap rail, BlockPos stationPos,
-            TileEntityStation first, TileEntityStation second) {
+                                      TileEntityStation first, TileEntityStation second) {
         int split = Math.max(8, (int) (rail.getLength() * 2.0));
         split = Math.min(split, 128);
 
         int nearestIdx = rail.getNearlestPoint(split,
                 stationPos.getX() + 0.5, stationPos.getZ() + 0.5);
-        float railYaw = NGTMath.wrapAngle(rail.getRailYaw(split, nearestIdx));
-
-        if (second == null)
-            return railYaw;
-
-        double dx = (second.getPos().getX() + 0.5) - (first.getPos().getX() + 0.5);
-        double dz = (second.getPos().getZ() + 0.5) - (first.getPos().getZ() + 0.5);
-        float dirToSecond = (float) Math.toDegrees(Math.atan2(dx, -dz));
-        dirToSecond = NGTMath.wrapAngle(dirToSecond);
-
-        float yawA = NGTMath.wrapAngle(railYaw);
-        float yawB = NGTMath.wrapAngle(railYaw + 180f);
-
-        float diffA = angleDiff(yawA, dirToSecond);
-        float diffB = angleDiff(yawB, dirToSecond);
-
-        return (diffA <= diffB) ? yawB : yawA;
+        return NGTMath.wrapAngle(rail.getRailYaw(split, nearestIdx));
     }
 
     private static float angleDiff(float a, float b) {
