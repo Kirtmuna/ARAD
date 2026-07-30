@@ -9,6 +9,7 @@ public class TileEntitySpeedLimitSign extends TileEntity {
 
     private int speedLimitKmh = 120;
     private int startOffsetBlocks = 0;
+    private boolean requireRedstone = false;
 
     private static int clampSpeed(int kmh) {
         return Math.max(1, Math.min(360, kmh));
@@ -36,9 +37,10 @@ public class TileEntitySpeedLimitSign extends TileEntity {
         markDirty();
     }
 
-    public void setConfig(int kmh, int offsetBlocks) {
+    public void setConfig(int kmh, int offsetBlocks, boolean requireRedstone) {
         this.speedLimitKmh = clampSpeed(kmh);
         this.startOffsetBlocks = clampOffset(offsetBlocks);
+        this.requireRedstone = requireRedstone;
         markDirty();
     }
 
@@ -62,6 +64,7 @@ public class TileEntitySpeedLimitSign extends TileEntity {
         super.writeToNBT(nbt);
         nbt.setInteger("SpeedLimitKmh", speedLimitKmh);
         nbt.setInteger("StartOffsetBlocks", startOffsetBlocks);
+        nbt.setBoolean("RequireRedstone", requireRedstone);
         return nbt;
     }
 
@@ -72,5 +75,16 @@ public class TileEntitySpeedLimitSign extends TileEntity {
             speedLimitKmh = clampSpeed(nbt.getInteger("SpeedLimitKmh"));
         if (nbt.hasKey("StartOffsetBlocks"))
             startOffsetBlocks = clampOffset(nbt.getInteger("StartOffsetBlocks"));
+        if (nbt.hasKey("RequireRedstone"))
+            requireRedstone = nbt.getBoolean("RequireRedstone");
+    }
+
+    public boolean isRequireRedstone() {
+        return requireRedstone;
+    }
+
+    public void setRequireRedstone(boolean requireRedstone) {
+        this.requireRedstone = requireRedstone;
+        markDirty();
     }
 }

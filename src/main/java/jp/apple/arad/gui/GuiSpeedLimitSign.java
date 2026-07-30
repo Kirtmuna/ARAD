@@ -13,7 +13,10 @@ import java.io.IOException;
 public class GuiSpeedLimitSign extends GuiContainer {
 
     private static final int GUI_W = 196;
-    private static final int GUI_H = 86;
+    private static final int GUI_H = 100;
+
+    private boolean requireRedstone;
+    private static final int RS_TOGGLE_X = 8, RS_TOGGLE_Y = 68, RS_TOGGLE_W = 12, RS_TOGGLE_H = 12;
 
     private final ContainerSpeedLimitSign container;
     private final BlockPos pos;
@@ -44,6 +47,8 @@ public class GuiSpeedLimitSign extends GuiContainer {
         offsetField.setMaxStringLength(5);
         offsetField.setText(String.valueOf(container.speedLimitSign.getStartOffsetBlocks()));
         offsetField.setCanLoseFocus(true);
+
+        requireRedstone = container.speedLimitSign.isRequireRedstone();
     }
 
     @Override
@@ -56,14 +61,16 @@ public class GuiSpeedLimitSign extends GuiContainer {
     private void sendIfChanged() {
         int newLimit = parseLimit();
         int newOffset = parseOffset();
+        boolean newRs = requireRedstone;
         if (newLimit == container.speedLimitSign.getSpeedLimitKmh()
-                && newOffset == container.speedLimitSign.getStartOffsetBlocks()) {
+                && newOffset == container.speedLimitSign.getStartOffsetBlocks()
+                && newRs == container.speedLimitSign.isRequireRedstone()) {
             return;
         }
 
-        container.speedLimitSign.setConfig(newLimit, newOffset);
+        container.speedLimitSign.setConfig(newLimit, newOffset, newRs);
         AradPacketHandler.CHANNEL.sendToServer(
-                new PacketSpeedLimitSignConfig(pos, newLimit, newOffset));
+                new PacketSpeedLimitSignConfig(pos, newLimit, newOffset, newRs));
     }
 
     private int parseLimit() {
@@ -118,6 +125,13 @@ public class GuiSpeedLimitSign extends GuiContainer {
         super.mouseClicked(mouseX, mouseY, mouseButton);
         limitField.mouseClicked(mouseX, mouseY, mouseButton);
         offsetField.mouseClicked(mouseX, mouseY, mouseButton);
+
+        int boxX = RS_TOGGLE_X + 60;
+        int rx = mouseX - guiLeft, ry = mouseY - guiTop;
+        if (rx >= boxX && rx <= boxX + RS_TOGGLE_W
+                && ry >= RS_TOGGLE_Y && ry <= RS_TOGGLE_Y + RS_TOGGLE_H) {
+            requireRedstone = !requireRedstone;
+        }
     }
 
     @Override
@@ -144,6 +158,11 @@ public class GuiSpeedLimitSign extends GuiContainer {
         fontRenderer.drawString("§7blocks", guiLeft + 160, guiTop + 49, 0xCCDDFF);
         drawRect(guiLeft + 99, guiTop + 44, guiLeft + 157, guiTop + 62, 0xFF000000);
         offsetField.drawTextBox();
+
+        fontRenderer.drawString("§7RS信号:", guiLeft + 8, guiTop + 70, 0xCCDDFF);
+        int boxColor = requireRedstone ? 0xFF33CC33 : 0xFF444444;
+        drawRect(guiLeft + RS_TOGGLE_X + 60, guiTop + RS_TOGGLE_Y, guiLeft + RS_TOGGLE_X + 60 + RS_TOGGLE_W,
+                guiTop + RS_TOGGLE_Y + RS_TOGGLE_H, boxColor);
     }
 
     @Override

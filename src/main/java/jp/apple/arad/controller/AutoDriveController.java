@@ -634,6 +634,10 @@ public final class AutoDriveController {
             lastTriggeredLimitPos = null;
             return;
         }
+        if (sign.isRequireRedstone() && !world.isBlockPowered(sign.getPos())) {
+            lastTriggeredLimitPos = null;
+            return;
+        }
         BlockPos signPos = sign.getPos();
         if (signPos.equals(lastTriggeredLimitPos))
             return;

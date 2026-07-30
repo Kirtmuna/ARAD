@@ -17,16 +17,18 @@ public final class PacketSpeedLimitSignConfig implements IMessage {
     private int z;
     private int speedLimitKmh;
     private int startOffsetBlocks;
+    private boolean requireRedstone;
 
     public PacketSpeedLimitSignConfig() {
     }
 
-    public PacketSpeedLimitSignConfig(BlockPos pos, int speedLimitKmh, int startOffsetBlocks) {
+    public PacketSpeedLimitSignConfig(BlockPos pos, int speedLimitKmh, int startOffsetBlocks, boolean requireRedstone) {
         this.x = pos.getX();
         this.y = pos.getY();
         this.z = pos.getZ();
         this.speedLimitKmh = speedLimitKmh;
         this.startOffsetBlocks = startOffsetBlocks;
+        this.requireRedstone = requireRedstone;
     }
 
     @Override
@@ -36,6 +38,7 @@ public final class PacketSpeedLimitSignConfig implements IMessage {
         buf.writeInt(z);
         buf.writeInt(speedLimitKmh);
         buf.writeInt(startOffsetBlocks);
+        buf.writeBoolean(requireRedstone);
     }
 
     @Override
@@ -45,6 +48,7 @@ public final class PacketSpeedLimitSignConfig implements IMessage {
         z = buf.readInt();
         speedLimitKmh = buf.readInt();
         startOffsetBlocks = buf.readInt();
+        requireRedstone = buf.readBoolean();
     }
 
     public static final class Handler implements IMessageHandler<PacketSpeedLimitSignConfig, IMessage> {
@@ -59,7 +63,7 @@ public final class PacketSpeedLimitSignConfig implements IMessage {
                     return;
 
                 TileEntitySpeedLimitSign sign = (TileEntitySpeedLimitSign) te;
-                sign.setConfig(msg.speedLimitKmh, msg.startOffsetBlocks);
+                sign.setConfig(msg.speedLimitKmh, msg.startOffsetBlocks, msg.requireRedstone);
 
                 if (world != null) {
                     world.notifyBlockUpdate(sign.getPos(), world.getBlockState(sign.getPos()),
