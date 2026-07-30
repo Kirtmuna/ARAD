@@ -14,10 +14,22 @@ public class ContainerStation extends Container {
     public ContainerStation(InventoryPlayer playerInv, TileEntityStation station) {
         this.station = station;
 
-        addSlotToContainer(new Slot(station, 0, 80, 94) {
+        addSlotToContainer(new Slot(station, 0, 100, 93) {
             @Override
             public boolean isItemValid(ItemStack stack) {
                 return station.isItemValidForSlot(0, stack);
+            }
+        });
+        addSlotToContainer(new Slot(station, 1, 122, 93) {
+            @Override
+            public boolean isItemValid(ItemStack stack) {
+                return station.isItemValidForSlot(1, stack);
+            }
+        });
+        addSlotToContainer(new Slot(station, 2, 144, 93) {
+            @Override
+            public boolean isItemValid(ItemStack stack) {
+                return station.isItemValidForSlot(2, stack);
             }
         });
 
@@ -50,12 +62,18 @@ public class ContainerStation extends Container {
         ItemStack stack = slot.getStack();
         result = stack.copy();
 
-        if (index == 0) {
-            if (!mergeItemStack(stack, 1, inventorySlots.size(), true))
+        if (index < 3) {
+            if (!mergeItemStack(stack, 3, inventorySlots.size(), true))
                 return ItemStack.EMPTY;
         } else {
-            if (station.isItemValidForSlot(0, stack) && !inventorySlots.get(0).getHasStack()) {
-                if (!mergeItemStack(stack, 0, 1, false))
+            if (station.isItemValidForSlot(0, stack)) {
+                boolean moved = false;
+                for (int i = 0; i < 3 && !moved; i++) {
+                    if (!inventorySlots.get(i).getHasStack()) {
+                        moved = mergeItemStack(stack, i, i + 1, false);
+                    }
+                }
+                if (!moved)
                     return ItemStack.EMPTY;
             } else {
                 return ItemStack.EMPTY;

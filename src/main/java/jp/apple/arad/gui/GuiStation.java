@@ -202,10 +202,14 @@ public class GuiStation extends GuiContainer {
         drawRect(guiLeft + 79, guiTop + 66, guiLeft + 121, guiTop + 84, 0xFF000000);
         dwellField.drawTextBox();
 
-        fontRenderer.drawString("§7編成:", guiLeft + 8, guiTop + 92, 0xCCDDFF);
-        int sx = guiLeft + 79, sy = guiTop + 93;
-        drawRect(sx - 1, sy - 1, sx + 19, sy + 19, 0xFF555555);
-        drawRect(sx, sy, sx + 18, sy + 18, 0xFF2A2A2A);
+        fontRenderer.drawString("§7編成:", guiLeft + 70, guiTop + 84, 0xCCDDFF);
+        int startX = guiLeft + 100;
+        int sy = guiTop + 93;
+        for (int i = 0; i < 3; i++) {
+            int sx = startX + i * 22;
+            drawRect(sx - 1, sy - 1, sx + 17, sy + 17, 0xFF555555);
+            drawRect(sx, sy, sx + 16, sy + 16, 0xFF2A2A2A);
+        }
 
         drawHorizontalLine(guiLeft + 8, guiLeft + xSize - 8, guiTop + 112, 0xFF2A3F70);
         fontRenderer.drawString("§7インベントリ", guiLeft + 8, guiTop + 115, 0x8899CC);

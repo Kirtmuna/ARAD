@@ -4,6 +4,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagList;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.play.server.SPacketUpdateTileEntity;
 import net.minecraft.tileentity.TileEntity;
@@ -11,6 +12,7 @@ import net.minecraft.util.ITickable;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TextComponentString;
 
+import java.util.Arrays;
 import java.util.UUID;
 
 public class TileEntityStation extends TileEntity implements ITickable, IInventory {
@@ -19,7 +21,10 @@ public class TileEntityStation extends TileEntity implements ITickable, IInvento
     private String stationName = "新しい駅";
     private boolean registered = false;
 
-    private ItemStack formationItem = ItemStack.EMPTY;
+    private static final int FORMATION_SLOT_COUNT = 3;
+    private final ItemStack[] formationItems = new ItemStack[]{
+            ItemStack.EMPTY, ItemStack.EMPTY, ItemStack.EMPTY};
+    private int nextFormationSlot = 0;
 
     private boolean doorLeft = true;
     private boolean doorRight = true;
@@ -101,7 +106,14 @@ public class TileEntityStation extends TileEntity implements ITickable, IInvento
     }
 
     public ItemStack getFormationItem() {
-        return formationItem;
+        for (int i = 0; i < FORMATION_SLOT_COUNT; i++) {
+            int idx = (nextFormationSlot + i) % FORMATION_SLOT_COUNT;
+            if (!formationItems[idx].isEmpty()) {
+                nextFormationSlot = (idx + 1) % FORMATION_SLOT_COUNT;
+                return formationItems[idx];
+            }
+        }
+        return ItemStack.EMPTY;
     }
 
     @Override
@@ -152,9 +164,16 @@ public class TileEntityStation extends TileEntity implements ITickable, IInvento
         nbt.setBoolean("SpawnReversed", spawnReversed);
         nbt.setBoolean("Turnback", turnback);
         nbt.setInteger("DwellTicks", dwellTimeTicks);
-        if (!formationItem.isEmpty()) {
-            nbt.setTag("FormationItem", formationItem.writeToNBT(new NBTTagCompound()));
+        nbt.setInteger("NextFormationSlot", nextFormationSlot);
+        NBTTagList itemList = new NBTTagList();
+        for (int i = 0; i < FORMATION_SLOT_COUNT; i++) {
+            NBTTagCompound itemTag = new NBTTagCompound();
+            itemTag.setInteger("Slot", i);
+            if (!formationItems[i].isEmpty())
+                formationItems[i].writeToNBT(itemTag);
+            itemList.appendTag(itemTag);
         }
+        nbt.setTag("FormationItems", itemList);
         return nbt;
     }
 
@@ -175,52 +194,66 @@ public class TileEntityStation extends TileEntity implements ITickable, IInvento
             turnback = nbt.getBoolean("Turnback");
         if (nbt.hasKey("DwellTicks"))
             dwellTimeTicks = Math.max(20, nbt.getInteger("DwellTicks"));
-        if (nbt.hasKey("FormationItem"))
-            formationItem = new ItemStack(nbt.getCompoundTag("FormationItem"));
+        if (nbt.hasKey("NextFormationSlot"))
+            nextFormationSlot = nbt.getInteger("NextFormationSlot") % FORMATION_SLOT_COUNT;
+
+        java.util.Arrays.fill(formationItems, ItemStack.EMPTY);
+        if (nbt.hasKey("FormationItems")) {
+            NBTTagList itemList = nbt.getTagList("FormationItems", 10);
+            for (int i = 0; i < itemList.tagCount(); i++) {
+                NBTTagCompound itemTag = itemList.getCompoundTagAt(i);
+                int slot = itemTag.getInteger("Slot");
+                if (slot >= 0 && slot < FORMATION_SLOT_COUNT)
+                    formationItems[slot] = new ItemStack(itemTag);
+            }
+        } else if (nbt.hasKey("FormationItem")) {
+            formationItems[0] = new ItemStack(nbt.getCompoundTag("FormationItem"));
+        }
         registered = false;
     }
 
     @Override
     public int getSizeInventory() {
-        return 1;
+        return FORMATION_SLOT_COUNT;
     }
 
     @Override
     public boolean isEmpty() {
-        return formationItem.isEmpty();
+        for (ItemStack s : formationItems)
+            if (!s.isEmpty())
+                return false;
+        return true;
     }
 
     @Override
     public ItemStack getStackInSlot(int index) {
-        return index == 0 ? formationItem : ItemStack.EMPTY;
+        return (index >= 0 && index < FORMATION_SLOT_COUNT) ? formationItems[index] : ItemStack.EMPTY;
     }
 
     @Override
     public ItemStack decrStackSize(int index, int count) {
-        if (index != 0 || formationItem.isEmpty())
+        if (index < 0 || index >= FORMATION_SLOT_COUNT || formationItems[index].isEmpty())
             return ItemStack.EMPTY;
-        ItemStack result = formationItem.splitStack(count);
-        if (formationItem.isEmpty())
-            formationItem = ItemStack.EMPTY;
+        ItemStack result = formationItems[index].splitStack(count);
         markDirty();
         return result;
     }
 
     @Override
     public ItemStack removeStackFromSlot(int index) {
-        if (index != 0)
+        if (index < 0 || index >= FORMATION_SLOT_COUNT)
             return ItemStack.EMPTY;
-        ItemStack old = formationItem;
-        formationItem = ItemStack.EMPTY;
+        ItemStack old = formationItems[index];
+        formationItems[index] = ItemStack.EMPTY;
         markDirty();
         return old;
     }
 
     @Override
     public void setInventorySlotContents(int index, ItemStack stack) {
-        if (index != 0)
+        if (index < 0 || index >= FORMATION_SLOT_COUNT)
             return;
-        formationItem = stack;
+        formationItems[index] = stack;
         if (!stack.isEmpty() && stack.getCount() > 1)
             stack.setCount(1);
         markDirty();
@@ -268,7 +301,7 @@ public class TileEntityStation extends TileEntity implements ITickable, IInvento
 
     @Override
     public void clear() {
-        formationItem = ItemStack.EMPTY;
+        Arrays.fill(formationItems, ItemStack.EMPTY);
         markDirty();
     }
 
