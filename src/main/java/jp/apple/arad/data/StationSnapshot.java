@@ -10,14 +10,15 @@ public final class StationSnapshot {
     public final boolean doorLeft;
     public final boolean doorRight;
     public final boolean spawnReversed;
+    public final boolean turnback;
     public final int dwellTicks;
 
     public StationSnapshot(String id, String name, float x, float z, int dim) {
-        this(id, name, x, z, dim, true, true, false, 400);
+        this(id, name, x, z, dim, true, true, false, false, 400);
     }
 
     public StationSnapshot(String id, String name, float x, float z, int dim,
-            boolean doorLeft, boolean doorRight, boolean spawnReversed, int dwellTicks) {
+            boolean doorLeft, boolean doorRight, boolean spawnReversed, boolean turnback, int dwellTicks) {
         this.id = id;
         this.name = name;
         this.x = x;
@@ -26,6 +27,7 @@ public final class StationSnapshot {
         this.doorLeft = doorLeft;
         this.doorRight = doorRight;
         this.spawnReversed = spawnReversed;
+        this.turnback = turnback;
         this.dwellTicks = Math.max(20, dwellTicks);
     }
 

@@ -26,6 +26,7 @@ public final class StationRegistry {
                 te.isDoorLeft(),
                 te.isDoorRight(),
                 te.isSpawnReversed(),
+                te.isTurnback(),
                 te.getDwellTimeTicks());
     }
 

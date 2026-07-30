@@ -24,6 +24,7 @@ public class TileEntityStation extends TileEntity implements ITickable, IInvento
     private boolean doorLeft = true;
     private boolean doorRight = true;
     private boolean spawnReversed = false;
+    private boolean turnback = false;
     private int dwellTimeTicks = 400;
 
     public String getStationId() {
@@ -66,6 +67,16 @@ public class TileEntityStation extends TileEntity implements ITickable, IInvento
 
     public void setSpawnReversed(boolean v) {
         this.spawnReversed = v;
+        markDirty();
+        registered = false;
+    }
+    
+    public boolean isTurnback() {
+        return turnback;
+    }
+
+    public void setTurnback(boolean v) {
+        this.turnback = v;
         markDirty();
         registered = false;
     }
@@ -139,6 +150,7 @@ public class TileEntityStation extends TileEntity implements ITickable, IInvento
         nbt.setBoolean("DoorLeft", doorLeft);
         nbt.setBoolean("DoorRight", doorRight);
         nbt.setBoolean("SpawnReversed", spawnReversed);
+        nbt.setBoolean("Turnback", turnback);
         nbt.setInteger("DwellTicks", dwellTimeTicks);
         if (!formationItem.isEmpty()) {
             nbt.setTag("FormationItem", formationItem.writeToNBT(new NBTTagCompound()));
@@ -159,6 +171,8 @@ public class TileEntityStation extends TileEntity implements ITickable, IInvento
             doorRight = nbt.getBoolean("DoorRight");
         if (nbt.hasKey("SpawnReversed"))
             spawnReversed = nbt.getBoolean("SpawnReversed");
+        if (nbt.hasKey("Turnback"))
+            turnback = nbt.getBoolean("Turnback");
         if (nbt.hasKey("DwellTicks"))
             dwellTimeTicks = Math.max(20, nbt.getInteger("DwellTicks"));
         if (nbt.hasKey("FormationItem"))

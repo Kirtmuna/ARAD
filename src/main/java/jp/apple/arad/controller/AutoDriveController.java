@@ -120,6 +120,7 @@ public final class AutoDriveController {
     private boolean sectionCoastMode = false;
     private int slotCheckCooldown = 0;
     private int lastPassedSectionLimitKmh = -1;
+    private boolean reversed = false;
 
     public AutoDriveController(long formationId, String routeId) {
         this(formationId, routeId, 0, 0L);
@@ -522,24 +523,25 @@ public final class AutoDriveController {
                 state = DriveState.DOOR_OPEN_SIGNAL_WAIT;
                 return;
             }
-            proceedToDoorClose(formation, cs, ss);
+            proceedToDoorClose(formation, cs, ss, stationIds);
         }
     }
 
     private void tickDoorOpenSignalWait(World world, Formation formation, int dt) {
         holdStationStop(formation);
         stuckTicks = 0;
+        List<String> stationIds = RouteManager.get(world).getRoute(routeId).stationIds;
         if (!isNextSignalStop(world)) {
-            TileEntityStation cs = getStation(RouteManager.get(world).getRoute(routeId).stationIds, currentStationIdx);
-            StationSnapshot ss = getStationSnapshot(RouteManager.get(world).getRoute(routeId).stationIds, currentStationIdx);
-            proceedToDoorClose(formation, cs, ss);
+            TileEntityStation cs = getStation(stationIds, currentStationIdx);
+            StationSnapshot ss = getStationSnapshot(stationIds, currentStationIdx);
+            proceedToDoorClose(formation, cs, ss, stationIds);
         }
     }
 
-    private void proceedToDoorClose(Formation formation, TileEntityStation cs, StationSnapshot ss) {
+    private void proceedToDoorClose(Formation formation, TileEntityStation cs, StationSnapshot ss, List<String> stationIds) {
         byte doorData = (cs != null) ? cs.getDoorData() : (ss != null ? ss.getDoorData() : (byte) 3);
         if (doorData == 0) {
-            departAfterStop(formation);
+            departAfterStop(formation, stationIds);
         } else {
             applyDoorState(formation, (byte) 0);
             state = DriveState.DOOR_CLOSE_WAIT;
@@ -553,10 +555,15 @@ public final class AutoDriveController {
         stuckTicks = 0;
         dwellTimer -= dt;
         if (dwellTimer <= 0)
-            departAfterStop(formation);
+            departAfterStop(formation, stationIds);
     }
 
-    private void departAfterStop(Formation formation) {
+    private void departAfterStop(Formation formation, List<String> stationIds) {
+        String departedStationId = (currentStationIdx >= 0 && currentStationIdx < stationIds.size())
+                ? stationIds.get(currentStationIdx)
+                : null;
+        boolean turnback = isTurnbackStation(departedStationId);
+
         currentStationIdx++;
         arrivalLatched = false;
         arriveConfirmTicks = 0;
@@ -564,6 +571,10 @@ public final class AutoDriveController {
         controlAccumTicks = 0;
         odometerReady = false;
         state = DriveState.EN_ROUTE;
+
+        if (turnback)
+            reversed = !reversed;
+
         EntityTrainBase lead = getLeadTrain(formation);
         if (lead != null && !lead.isDead)
             applyRoleFront(lead);
@@ -1140,11 +1151,19 @@ public final class AutoDriveController {
     }
 
     private EntityTrainBase getLeadTrain(Formation f) {
-        if (f == null || f.entries == null)
+        if (f == null || f.entries == null || f.entries.length == 0)
             return null;
-        for (FormationEntry e : f.entries)
-            if (e != null && e.train != null)
-                return e.train;
+        if (!reversed) {
+            for (FormationEntry e : f.entries)
+                if (e != null && e.train != null)
+                    return e.train;
+        } else {
+            for (int i = f.entries.length - 1; i >= 0; i--) {
+                FormationEntry e = f.entries[i];
+                if (e != null && e.train != null)
+                    return e.train;
+            }
+        }
         return null;
     }
 
@@ -1249,5 +1268,14 @@ public final class AutoDriveController {
             return false;
         }
         return resolveSpeedKmh(slot, level) == 0;
+    }
+    private boolean isTurnbackStation(String stationId) {
+        if (stationId == null)
+            return false;
+        TileEntityStation te = StationRegistry.INSTANCE.get(stationId);
+        if (te != null)
+            return te.isTurnback();
+        StationSnapshot snap = StationRegistry.INSTANCE.getSnapshot(stationId);
+        return snap != null && snap.turnback;
     }
 }

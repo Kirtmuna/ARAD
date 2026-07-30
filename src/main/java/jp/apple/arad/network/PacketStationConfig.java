@@ -25,13 +25,14 @@ public final class PacketStationConfig implements IMessage {
     private boolean doorLeft;
     private boolean doorRight;
     private boolean spawnReversed;
+    private boolean turnback;
     private int dwellTicks;
 
     public PacketStationConfig() {
     }
 
     public PacketStationConfig(BlockPos pos, String name,
-            boolean doorLeft, boolean doorRight, boolean spawnReversed, int dwellTicks) {
+            boolean doorLeft, boolean doorRight, boolean spawnReversed, boolean turnback, int dwellTicks) {
         this.x = pos.getX();
         this.y = pos.getY();
         this.z = pos.getZ();
@@ -39,6 +40,7 @@ public final class PacketStationConfig implements IMessage {
         this.doorLeft = doorLeft;
         this.doorRight = doorRight;
         this.spawnReversed = spawnReversed;
+        this.turnback = turnback;
         this.dwellTicks = dwellTicks;
     }
 
@@ -54,6 +56,7 @@ public final class PacketStationConfig implements IMessage {
         buf.writeBoolean(doorLeft);
         buf.writeBoolean(doorRight);
         buf.writeBoolean(spawnReversed);
+        buf.writeBoolean(turnback);
         buf.writeInt(dwellTicks);
     }
 
@@ -69,6 +72,7 @@ public final class PacketStationConfig implements IMessage {
         doorLeft = buf.readBoolean();
         doorRight = buf.readBoolean();
         spawnReversed = buf.readBoolean();
+        turnback = buf.readBoolean();
         dwellTicks = buf.readInt();
     }
 
@@ -88,6 +92,7 @@ public final class PacketStationConfig implements IMessage {
                 station.setDoorLeft(msg.doorLeft);
                 station.setDoorRight(msg.doorRight);
                 station.setSpawnReversed(msg.spawnReversed);
+                station.setTurnback(msg.turnback);
                 station.setDwellTimeTicks(msg.dwellTicks);
                 StationRegistry.INSTANCE.register(station);
 

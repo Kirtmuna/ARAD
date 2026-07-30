@@ -68,6 +68,7 @@ public final class StationCacheStore extends WorldSavedData {
                     !tag.hasKey("doorLeft") || tag.getBoolean("doorLeft"),
                     !tag.hasKey("doorRight") || tag.getBoolean("doorRight"),
                     tag.hasKey("spawnReversed") && tag.getBoolean("spawnReversed"),
+                    tag.hasKey("turnback") && tag.getBoolean("turnback"),
                     tag.hasKey("dwellTicks") ? tag.getInteger("dwellTicks") : 400);
             if (s.id != null && !s.id.isEmpty()) {
                 snapshotMap.put(s.id, s);
@@ -88,6 +89,7 @@ public final class StationCacheStore extends WorldSavedData {
             tag.setBoolean("doorLeft", s.doorLeft);
             tag.setBoolean("doorRight", s.doorRight);
             tag.setBoolean("spawnReversed", s.spawnReversed);
+            tag.setBoolean("turnback", s.turnback);
             tag.setInteger("dwellTicks", s.dwellTicks);
             list.appendTag(tag);
         }

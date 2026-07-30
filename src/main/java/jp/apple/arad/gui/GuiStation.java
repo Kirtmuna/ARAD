@@ -19,6 +19,7 @@ public class GuiStation extends GuiContainer {
     private static final int BTN_DOOR_LEFT = 10;
     private static final int BTN_DOOR_RIGHT = 11;
     private static final int BTN_SPAWN_REVERSE = 12;
+    private static final int BTN_TURNBACK = 13;
 
     private final ContainerStation container;
     private final BlockPos pos;
@@ -29,10 +30,12 @@ public class GuiStation extends GuiContainer {
     private boolean doorLeft;
     private boolean doorRight;
     private boolean spawnReversed;
+    private boolean turnback;
 
     private GuiButton btnDoorLeft;
     private GuiButton btnDoorRight;
     private GuiButton btnSpawnReverse;
+    private GuiButton btnTurnback;
 
     public GuiStation(ContainerStation container, BlockPos pos) {
         super(container);
@@ -44,6 +47,7 @@ public class GuiStation extends GuiContainer {
         this.doorLeft = container.station.isDoorLeft();
         this.doorRight = container.station.isDoorRight();
         this.spawnReversed = container.station.isSpawnReversed();
+        this.turnback = container.station.isTurnback();
     }
 
     @Override
@@ -72,9 +76,12 @@ public class GuiStation extends GuiContainer {
                 doorRight ? "§a右ドア ▶" : "§7右ドア ▶");
         btnSpawnReverse = new GuiButton(BTN_SPAWN_REVERSE, guiLeft + 133, guiTop + 66, 35, 16,
                 spawnReversed ? "§a反転" : "§7反転");
+        btnTurnback = new GuiButton(BTN_TURNBACK, guiLeft + 8, guiTop + 92, 70, 18,
+                turnback ? "§a折り返し" : "§7折り返し");
         buttonList.add(btnDoorLeft);
         buttonList.add(btnDoorRight);
         buttonList.add(btnSpawnReverse);
+        buttonList.add(btnTurnback);
     }
 
     @Override
@@ -96,6 +103,7 @@ public class GuiStation extends GuiContainer {
                 || doorLeft != container.station.isDoorLeft()
                 || doorRight != container.station.isDoorRight()
                 || spawnReversed != container.station.isSpawnReversed()
+                || turnback != container.station.isTurnback()
                 || newTicks != container.station.getDwellTimeTicks();
 
         if (changed) {
@@ -103,9 +111,10 @@ public class GuiStation extends GuiContainer {
             container.station.setDoorLeft(doorLeft);
             container.station.setDoorRight(doorRight);
             container.station.setSpawnReversed(spawnReversed);
+            container.station.setTurnback(turnback);
             container.station.setDwellTimeTicks(newTicks);
             AradPacketHandler.CHANNEL.sendToServer(
-                    new PacketStationConfig(pos, newName, doorLeft, doorRight, spawnReversed, newTicks));
+                    new PacketStationConfig(pos, newName, doorLeft, doorRight, spawnReversed, turnback, newTicks));
         }
     }
 
@@ -129,6 +138,9 @@ public class GuiStation extends GuiContainer {
         } else if (button.id == BTN_SPAWN_REVERSE) {
             spawnReversed = !spawnReversed;
             btnSpawnReverse.displayString = spawnReversed ? "§a反転" : "§7反転";
+        } else if (button.id == BTN_TURNBACK) {
+            turnback = !turnback;
+            btnTurnback.displayString = turnback ? "§a折り返し" : "§7折り返し";
         }
     }
 

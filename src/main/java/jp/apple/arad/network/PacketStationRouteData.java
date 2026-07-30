@@ -54,6 +54,7 @@ public final class PacketStationRouteData implements IMessage {
             buf.writeBoolean(s.doorLeft);
             buf.writeBoolean(s.doorRight);
             buf.writeBoolean(s.spawnReversed);
+            buf.writeBoolean(s.turnback);
             buf.writeInt(s.dwellTicks);
         }
         buf.writeShort(routes.size());
@@ -77,7 +78,8 @@ public final class PacketStationRouteData implements IMessage {
                     buf.readFloat(), buf.readFloat(),
                     buf.readInt(),
                     buf.readBoolean(), buf.readBoolean(),
-                    buf.readBoolean(), buf.readInt()));
+                    buf.readBoolean(), buf.readBoolean(),
+                    buf.readInt()));
         }
         int rc = buf.readShort();
         routes = new ArrayList<>(rc);
