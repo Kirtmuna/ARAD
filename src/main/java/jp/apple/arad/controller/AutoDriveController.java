@@ -313,7 +313,10 @@ public final class AutoDriveController {
                 tickStopWaitOpen(formation, dt);
                 break;
             case DOOR_OPEN:
-                tickDoorOpen(formation, lead, route.stationIds, dt);
+                tickDoorOpen(world, formation, lead, route.stationIds, dt);
+                break;
+            case DOOR_OPEN_SIGNAL_WAIT:
+                tickDoorOpenSignalWait(world, formation, dt);
                 break;
             case DOOR_CLOSE_WAIT:
                 tickDoorCloseWait(formation, route.stationIds, dt);
@@ -491,7 +494,7 @@ public final class AutoDriveController {
         }
     }
 
-    private void tickDoorOpen(Formation formation, EntityTrainBase lead,
+    private void tickDoorOpen(World world, Formation formation, EntityTrainBase lead,
             List<String> stationIds, int dt) {
         TileEntityStation cs = getStation(stationIds, currentStationIdx);
         StationSnapshot ss = getStationSnapshot(stationIds, currentStationIdx);
@@ -515,15 +518,33 @@ public final class AutoDriveController {
         stuckTicks = 0;
         dwellTimer -= dt;
         if (dwellTimer <= 0) {
-            byte doorData = (cs != null) ? cs.getDoorData() : (ss != null ? ss.getDoorData() : (byte) 3);
-            if (doorData == 0) {
-                departAfterStop(formation);
-            } else {
-                applyDoorState(formation, (byte) 0);
-                state = DriveState.DOOR_CLOSE_WAIT;
-                dwellTimer = DOOR_CLOSE_TICKS;
-                dwellInitialized = false;
+            if (isNextSignalStop(world)) {
+                state = DriveState.DOOR_OPEN_SIGNAL_WAIT;
+                return;
             }
+            proceedToDoorClose(formation, cs, ss);
+        }
+    }
+
+    private void tickDoorOpenSignalWait(World world, Formation formation, int dt) {
+        holdStationStop(formation);
+        stuckTicks = 0;
+        if (!isNextSignalStop(world)) {
+            TileEntityStation cs = getStation(RouteManager.get(world).getRoute(routeId).stationIds, currentStationIdx);
+            StationSnapshot ss = getStationSnapshot(RouteManager.get(world).getRoute(routeId).stationIds, currentStationIdx);
+            proceedToDoorClose(formation, cs, ss);
+        }
+    }
+
+    private void proceedToDoorClose(Formation formation, TileEntityStation cs, StationSnapshot ss) {
+        byte doorData = (cs != null) ? cs.getDoorData() : (ss != null ? ss.getDoorData() : (byte) 3);
+        if (doorData == 0) {
+            departAfterStop(formation);
+        } else {
+            applyDoorState(formation, (byte) 0);
+            state = DriveState.DOOR_CLOSE_WAIT;
+            dwellTimer = DOOR_CLOSE_TICKS;
+            dwellInitialized = false;
         }
     }
 
@@ -1205,5 +1226,24 @@ public final class AutoDriveController {
             this.longitudinal = longitudinal;
             this.lateral = lateral;
         }
+    }
+    private boolean isNextSignalStop(World world) {
+        if (sectionSlots == null || sectionSlots.isEmpty())
+            return false;
+        SectionSlot slot = sectionSlots.get(0);
+        if (slot.signalPos == null)
+            return false;
+        TileEntity te = world.getTileEntity(slot.signalPos);
+        if (!(te instanceof jp.ngt.rtm.electric.TileEntitySignal))
+            return false;
+        int level;
+        try {
+            Object raw = jp.ngt.ngtlib.util.NGTUtil.getField(
+                    jp.ngt.rtm.electric.TileEntitySignal.class, te, "signalLevel");
+            level = (raw instanceof Integer) ? (int) raw : 1;
+        } catch (Exception e) {
+            return false;
+        }
+        return resolveSpeedKmh(slot, level) == 0;
     }
 }

@@ -11,6 +11,10 @@ public enum DriveState {
      */
     DOOR_OPEN,
     /**
+     * 次信号待ち
+     */
+    DOOR_OPEN_SIGNAL_WAIT,
+    /**
      * 発車待ち
      */
     DOOR_CLOSE_WAIT,
