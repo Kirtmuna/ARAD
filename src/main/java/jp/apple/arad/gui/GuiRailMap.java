@@ -485,8 +485,17 @@ public final class GuiRailMap extends GuiScreen {
             drawRect(sx - r, sz - r, sx - r + 1, sz + r + 1, 0x44FFFFFF);
 
             if (isPending) {
-                int num = pendingIds.indexOf(st.id) + 1;
-                String ns = String.valueOf(num);
+                List<Integer> nums = new ArrayList<>();
+                for (int i = 0; i < pendingIds.size(); i++) {
+                    if (pendingIds.get(i).equals(st.id))
+                        nums.add(i + 1);
+                }
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < nums.size(); i++) {
+                    if (i > 0) sb.append(",");
+                    sb.append(nums.get(i));
+                }
+                String ns = sb.toString();
                 drawString(fontRenderer, ns, sx - fontRenderer.getStringWidth(ns) / 2, sz - 4, 0xFF000000);
             }
 
@@ -851,8 +860,11 @@ public final class GuiRailMap extends GuiScreen {
             for (StationSnapshot st : stations) {
                 int sx = toSX(st.x), sz = toSZ(st.z);
                 if (Math.abs(mx - sx) <= STATION_HIT_R && Math.abs(my - sz) <= STATION_HIT_R) {
-                    if (btn == 0 && !pendingIds.contains(st.id))
-                        pendingIds.add(st.id);
+                    if (btn == 0) {
+                        if (pendingIds.isEmpty() || !pendingIds.get(pendingIds.size() - 1).equals(st.id)) {
+                            pendingIds.add(st.id);
+                        }
+                    }
                     else if (btn == 1)
                         pendingIds.remove(st.id);
                     return;

@@ -43,8 +43,7 @@ public final class RouteManager extends WorldSavedData {
         Route r = routes.get(routeId);
         if (r == null)
             return;
-        if (!r.stationIds.contains(stationId))
-            r.stationIds.add(stationId);
+        r.stationIds.add(stationId);
         markDirty();
     }
 

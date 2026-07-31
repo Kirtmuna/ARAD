@@ -299,9 +299,19 @@ public final class AutoDriveController {
         controlAccumTicks = 0;
 
         Route route = RouteManager.get(world).getRoute(routeId);
-        if (route == null || currentStationIdx >= route.stationIds.size()) {
+        if (route == null) {
             killFormation(formation);
             return false;
+        }
+        List<String> stationIds = route.stationIds;
+        if (currentStationIdx >= stationIds.size()) {
+            int loopIdx = findLoopBackIndex(stationIds);
+            if (loopIdx >= 0) {
+                currentStationIdx = loopIdx;
+            } else {
+                killFormation(formation);
+                return false;
+            }
         }
         EntityTrainBase lead = getLeadTrain(formation);
         if (lead == null || lead.isDead) {
@@ -1277,5 +1287,16 @@ public final class AutoDriveController {
             return te.isTurnback();
         StationSnapshot snap = StationRegistry.INSTANCE.getSnapshot(stationId);
         return snap != null && snap.turnback;
+    }
+    private int findLoopBackIndex(List<String> stationIds) {
+        if (stationIds.isEmpty())
+            return -1;
+        String last = stationIds.get(stationIds.size() - 1);
+        for (int i = 0; i < stationIds.size() - 1; i++) {
+            if (stationIds.get(i).equals(last)) {
+                return i + 1;
+            }
+        }
+        return -1;
     }
 }
