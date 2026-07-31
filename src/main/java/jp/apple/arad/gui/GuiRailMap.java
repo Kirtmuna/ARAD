@@ -38,6 +38,7 @@ public final class GuiRailMap extends GuiScreen {
     private static final int BTN_CONFIRM = 102;
     private static final int BTN_DEL_BASE = 200;
     private static final int BTN_EDIT_BASE = 300;
+    private static final int BTN_SPAWN_ONE_BASE = 600;
     private static final int BTN_EDIT_SAVE = 400;
     private static final int BTN_EDIT_CANCEL = 401;
     private static final int BTN_SPEED_MODE = 500;
@@ -177,7 +178,8 @@ public final class GuiRailMap extends GuiScreen {
             int drawCount = Math.min(rows, Math.max(0, routes.size() - routeListScroll));
             for (int row = 0; row < drawCount; row++) {
                 int itemY = ROUTE_LIST_TOP + row * ROUTE_ROW_STEP;
-                buttonList.add(new GuiButton(BTN_DEL_BASE + row, width - 38, itemY, 32, 14, "§c×"));
+                buttonList.add(new GuiButton(BTN_DEL_BASE + row, width - 22, itemY, 16, 14, "§c×"));
+                buttonList.add(new GuiButton(BTN_SPAWN_ONE_BASE + row, width - 38, itemY, 16, 14, "§a+1"));
                 buttonList.add(new GuiButton(BTN_EDIT_BASE + row, width - 38, itemY + 15, 32, 14, "編集"));
             }
 
@@ -732,6 +734,15 @@ public final class GuiRailMap extends GuiScreen {
             if (idx < routes.size()) {
                 AradPacketHandler.CHANNEL.sendToServer(
                         PacketRouteEdit.deleteRoute(routes.get(idx).id));
+            }
+
+        } else if (id >= BTN_SPAWN_ONE_BASE && id < BTN_SPAWN_ONE_BASE + 1000) {
+            int row = id - BTN_SPAWN_ONE_BASE;
+            int idx = routeListScroll + row;
+            List<RouteSnapshot> routes = MapData.INSTANCE.getRoutes();
+            if (idx < routes.size()) {
+                AradPacketHandler.CHANNEL.sendToServer(
+                        PacketRouteEdit.spawnOneFormation(routes.get(idx).id));
             }
 
         } else if (id >= BTN_EDIT_BASE) {

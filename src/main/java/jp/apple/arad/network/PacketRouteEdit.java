@@ -23,6 +23,7 @@ public final class PacketRouteEdit implements IMessage {
     public static final byte OP_ADD_STATION = 3;
     public static final byte OP_REMOVE_STATION = 4;
     public static final byte OP_SET_TRAIN_COUNT = 7;
+    public static final byte OP_SPAWN_ONE = 8;
 
     private byte op;
     private String routeId = "";
@@ -130,6 +131,9 @@ public final class PacketRouteEdit implements IMessage {
                         rm.setTrainCount(msg.routeId, msg.trainCount);
                         AutoDriveManager.INSTANCE.startSchedule(world, msg.routeId, msg.trainCount);
                         break;
+                    case OP_SPAWN_ONE:
+                        AutoDriveManager.INSTANCE.spawnOneExtra(world, msg.routeId);
+                        break;
                 }
 
                 List<StationSnapshot> stations = StationRegistry.INSTANCE.toSnapshots();
@@ -139,5 +143,11 @@ public final class PacketRouteEdit implements IMessage {
             });
             return null;
         }
+    }
+    public static PacketRouteEdit spawnOneFormation(String routeId) {
+        PacketRouteEdit p = new PacketRouteEdit();
+        p.op = OP_SPAWN_ONE;
+        p.routeId = routeId;
+        return p;
     }
 }

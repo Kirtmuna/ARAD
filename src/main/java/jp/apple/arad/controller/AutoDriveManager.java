@@ -300,4 +300,27 @@ public final class AutoDriveManager {
             this.activeCount = 0;
         }
     }
+    public void spawnOneExtra(World world, String routeId) {
+        Route route = RouteManager.get(world).getRoute(routeId);
+        if (route == null || route.stationIds.size() < 2)
+            return;
+
+        RouteSchedule sched = schedules.get(routeId);
+        if (sched == null) {
+            sched = new RouteSchedule(0);
+            schedules.put(routeId, sched);
+        }
+
+        TileEntityStation firstStation = resolveStation(world, route.stationIds.get(0));
+        if (firstStation == null)
+            return;
+
+        double sx = firstStation.getPos().getX() + 0.5;
+        double sz = firstStation.getPos().getZ() + 0.5;
+
+        if (isAnyFormationWithin(sx, sz, SPAWN_CLEAR_RADIUS))
+            return;
+
+        spawnFormation(world, routeId, route, sched, sx, sz);
+    }
 }
