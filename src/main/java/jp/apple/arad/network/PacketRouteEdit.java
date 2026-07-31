@@ -24,6 +24,7 @@ public final class PacketRouteEdit implements IMessage {
     public static final byte OP_REMOVE_STATION = 4;
     public static final byte OP_SET_TRAIN_COUNT = 7;
     public static final byte OP_SPAWN_ONE = 8;
+    public static final byte OP_RENAME_ROUTE = 9;
 
     private byte op;
     private String routeId = "";
@@ -134,6 +135,9 @@ public final class PacketRouteEdit implements IMessage {
                     case OP_SPAWN_ONE:
                         AutoDriveManager.INSTANCE.spawnOneExtra(world, msg.routeId);
                         break;
+                    case OP_RENAME_ROUTE:
+                        rm.renameRoute(msg.routeId, msg.name.isEmpty() ? "新路線" : msg.name);
+                        break;
                 }
 
                 List<StationSnapshot> stations = StationRegistry.INSTANCE.toSnapshots();
@@ -148,6 +152,13 @@ public final class PacketRouteEdit implements IMessage {
         PacketRouteEdit p = new PacketRouteEdit();
         p.op = OP_SPAWN_ONE;
         p.routeId = routeId;
+        return p;
+    }
+    public static PacketRouteEdit renameRoute(String routeId, String newName) {
+        PacketRouteEdit p = new PacketRouteEdit();
+        p.op = OP_RENAME_ROUTE;
+        p.routeId = routeId;
+        p.name = newName;
         return p;
     }
 }

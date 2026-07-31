@@ -51,6 +51,10 @@ public final class GuiRailMap extends GuiScreen {
     private static final int STATION_HIT_R = 12;
     private static final int STATION_ICON = 7;
     private static final double RAIL_HIT_PX = 8.0;
+    private static final int EDIT_NAME_LABEL_Y = 30;
+    private static final int EDIT_NAME_FIELD_Y = 40;
+    private static final int EDIT_COUNT_LABEL_Y = 60;
+    private static final int EDIT_COUNT_FIELD_Y = 70;
     private final List<String> pendingIds = new ArrayList<>();
     private double offsetX = 0, offsetZ = 0;
     private double scale = 2.0;
@@ -64,6 +68,7 @@ public final class GuiRailMap extends GuiScreen {
     private String editRouteId = null;
     private String editRouteName = "";
     private GuiTextField editCountField;
+    private GuiTextField editNameField;
     private boolean speedEditMode = false;
     private boolean speedInputOpen = false;
     private String speedInputKey = null;
@@ -143,9 +148,16 @@ public final class GuiRailMap extends GuiScreen {
             buttonList.add(new GuiButton(BTN_EDIT_SAVE, dx, dy, (PANEL_W - 15) / 2, 20, "保存"));
             buttonList.add(
                     new GuiButton(BTN_EDIT_CANCEL, dx + (PANEL_W - 15) / 2 + 5, dy, (PANEL_W - 15) / 2, 20, "閉じる"));
+            if (editNameField == null) {
+                editNameField = new GuiTextField(11, fontRenderer,
+                        width - PANEL_W + 5, EDIT_NAME_FIELD_Y, PANEL_W - 10, 18);
+                editNameField.setMaxStringLength(32);
+                editNameField.setText(editRouteName);
+                editNameField.setFocused(false);
+            }
             if (editCountField == null) {
                 editCountField = new GuiTextField(10, fontRenderer,
-                        width - PANEL_W + 5, 135, PANEL_W - 10, 18);
+                        width - PANEL_W + 5, EDIT_COUNT_FIELD_Y, PANEL_W - 10, 18);
                 editCountField.setMaxStringLength(3);
                 editCountField.setText("1");
                 editCountField.setFocused(true);
@@ -238,6 +250,8 @@ public final class GuiRailMap extends GuiScreen {
             routeNameField.drawTextBox();
         if (editDialogOpen && editCountField != null)
             editCountField.drawTextBox();
+        if (editDialogOpen && editNameField != null)
+            editNameField.drawTextBox();
         if (speedInputOpen && speedInputField != null)
             speedInputField.drawTextBox();
 
@@ -524,9 +538,9 @@ public final class GuiRailMap extends GuiScreen {
         if (editDialogOpen) {
             drawRect(mapW + 2, py - 2, width - 2, py + 22, 0xFF1A2A55);
             drawRect(mapW + 2, py - 2, width - 2, py - 1, 0xFF44DDFF);
-            drawString(fontRenderer, "§e路線編集: " + editRouteName, px, py, 0xFFFFDD44);
-            py += 12;
-            drawString(fontRenderer, "§7同時運行本数:", px, py, TEXT_DIM);
+            drawString(fontRenderer, "§e路線編集", px, py, 0xFFFFDD44);
+            drawString(fontRenderer, "§7路線名:", px, EDIT_NAME_LABEL_Y, TEXT_DIM);
+            drawString(fontRenderer, "§7同時運行本数:", px, EDIT_COUNT_LABEL_Y, TEXT_DIM);
 
         } else if (routeCreateMode) {
             drawRect(mapW + 2, py - 2, width - 2, py + 22, 0xFF1A2A55);
@@ -724,6 +738,7 @@ public final class GuiRailMap extends GuiScreen {
         } else if (id == BTN_EDIT_CANCEL) {
             editDialogOpen = false;
             editCountField = null;
+            editNameField = null;
             editRouteId = null;
             rebuildButtons();
 
@@ -760,22 +775,33 @@ public final class GuiRailMap extends GuiScreen {
         editRouteId = route.id;
         editRouteName = route.name;
         editCountField = null;
+        editNameField = null;
         rebuildButtons();
         if (editCountField != null)
             editCountField.setText(String.valueOf(route.trainCount));
+        if (editNameField != null)
+            editNameField.setText(route.name);
     }
 
     private void saveEditDialog() {
         if (editRouteId == null || editCountField == null)
             return;
+        String newName = (editNameField != null) ? editNameField.getText().trim() : "";
+        if (newName.isEmpty())
+            newName = editRouteName;
         try {
             int count = Integer.parseInt(editCountField.getText().trim());
             AradPacketHandler.CHANNEL.sendToServer(
                     PacketRouteEdit.setTrainCount(editRouteId, count));
         } catch (NumberFormatException ignored) {
         }
+        if (!newName.equals(editRouteName)) {
+            AradPacketHandler.CHANNEL.sendToServer(
+                    PacketRouteEdit.renameRoute(editRouteId, newName));
+        }
         editDialogOpen = false;
         editCountField = null;
+        editNameField = null;
         editRouteId = null;
         rebuildButtons();
     }
@@ -856,6 +882,8 @@ public final class GuiRailMap extends GuiScreen {
             routeNameField.mouseClicked(mx, my, btn);
         if (editDialogOpen && editCountField != null)
             editCountField.mouseClicked(mx, my, btn);
+        if (editDialogOpen && editNameField != null)
+            editNameField.mouseClicked(mx, my, btn);
         if (speedInputOpen && speedInputField != null)
             speedInputField.mouseClicked(mx, my, btn);
 
@@ -930,6 +958,10 @@ public final class GuiRailMap extends GuiScreen {
                 saveEditDialog();
                 return;
             }
+            if (editNameField != null && editNameField.isFocused()) {
+                editNameField.textboxKeyTyped(ch, keyCode);
+                return;
+            }
             editCountField.textboxKeyTyped(ch, keyCode);
             return;
         }
@@ -950,6 +982,8 @@ public final class GuiRailMap extends GuiScreen {
             routeNameField.updateCursorCounter();
         if (editDialogOpen && editCountField != null)
             editCountField.updateCursorCounter();
+        if (editDialogOpen && editNameField != null)
+            editNameField.updateCursorCounter();
         if (speedInputOpen && speedInputField != null)
             speedInputField.updateCursorCounter();
 

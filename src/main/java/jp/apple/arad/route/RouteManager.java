@@ -62,6 +62,14 @@ public final class RouteManager extends WorldSavedData {
         r.trainCount = Math.max(0, count);
         markDirty();
     }
+    
+    public void renameRoute(String routeId, String name) {
+        Route r = routes.get(routeId);
+        if (r == null)
+            return;
+        r.name = name;
+        markDirty();
+    }
 
     public Route getRoute(String routeId) {
         return routes.get(routeId);
