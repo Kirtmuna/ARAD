@@ -13,7 +13,18 @@ public class TileEntitySubStation extends TileEntity implements ITickable {
     private String subStationId = UUID.randomUUID().toString();
     private String parentStationId = "";
     private SubStationMode mode = SubStationMode.STOP_POSITION_CORRECTION;
+    private boolean turnback = false;
     private boolean registered = false;
+
+    public boolean isTurnback() {
+        return turnback;
+    }
+
+    public void setTurnback(boolean turnback) {
+        this.turnback = turnback;
+        markDirty();
+        registered = false;
+    }
 
     public String getSubStationId() {
         return subStationId;
@@ -83,6 +94,7 @@ public class TileEntitySubStation extends TileEntity implements ITickable {
         nbt.setString("SubStationId", subStationId);
         nbt.setString("ParentStationId", parentStationId);
         nbt.setString("Mode", mode.name());
+        nbt.setBoolean("Turnback", turnback);
         return nbt;
     }
 
@@ -100,6 +112,8 @@ public class TileEntitySubStation extends TileEntity implements ITickable {
                 mode = SubStationMode.STOP_POSITION_CORRECTION;
             }
         }
+        if (nbt.hasKey("Turnback"))
+            turnback = nbt.getBoolean("Turnback");
         registered = false;
     }
 }

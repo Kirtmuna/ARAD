@@ -23,7 +23,8 @@ public final class SubStationRegistry {
                 (float) (te.getPos().getX() + 0.5),
                 (float) (te.getPos().getZ() + 0.5),
                 te.getWorld().provider.getDimension(),
-                te.getMode().name());
+                te.getMode().name(),
+                te.isTurnback());
         cache.put(snap.id, snap);
         if (!te.getWorld().isRemote) {
             SubStationCacheStore.get(te.getWorld()).upsert(snap);

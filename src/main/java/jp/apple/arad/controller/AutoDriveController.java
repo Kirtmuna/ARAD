@@ -1281,6 +1281,14 @@ public final class AutoDriveController {
     private boolean isTurnbackStation(String stationId) {
         if (stationId == null)
             return false;
+
+        if (reversed) {
+            SubStationSnapshot sub = SubStationRegistry.INSTANCE
+                    .findByParent(stationId, SubStationMode.STOP_POSITION_CORRECTION);
+            if (sub != null)
+                return sub.turnback;
+        }
+
         TileEntityStation te = StationRegistry.INSTANCE.get(stationId);
         if (te != null)
             return te.isTurnback();

@@ -60,7 +60,8 @@ public final class SubStationCacheStore extends WorldSavedData {
                     tag.getFloat("x"),
                     tag.getFloat("z"),
                     tag.getInteger("dim"),
-                    tag.hasKey("mode") ? tag.getString("mode") : SubStationMode.STOP_POSITION_CORRECTION.name());
+                    tag.hasKey("mode") ? tag.getString("mode") : SubStationMode.STOP_POSITION_CORRECTION.name(),
+                    tag.hasKey("turnback") && tag.getBoolean("turnback"));
             if (s.id != null && !s.id.isEmpty())
                 snapshotMap.put(s.id, s);
         }
@@ -77,6 +78,7 @@ public final class SubStationCacheStore extends WorldSavedData {
             tag.setFloat("z", s.z);
             tag.setInteger("dim", s.dim);
             tag.setString("mode", s.mode == null ? "" : s.mode);
+            tag.setBoolean("turnback", s.turnback);
             list.appendTag(tag);
         }
         nbt.setTag("subStations", list);

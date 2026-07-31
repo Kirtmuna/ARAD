@@ -18,10 +18,11 @@ import java.util.stream.Collectors;
 public class GuiSubStation extends GuiContainer {
 
     private static final int GUI_W = 196;
-    private static final int GUI_H = 86;
+    private static final int GUI_H = 100;
 
     private static final int BTN_PARENT_DROPDOWN = 10;
     private static final int BTN_MODE_TOGGLE = 11;
+    private static final int BTN_TURNBACK = 12;
 
     private final ContainerSubStation container;
     private final BlockPos pos;
@@ -29,11 +30,13 @@ public class GuiSubStation extends GuiContainer {
     private String selectedParentId;
     private String selectedParentName = "(未選択)";
     private SubStationMode selectedMode;
+    private boolean turnback;
 
     private List<StationSnapshot> stationOptions = new ArrayList<>();
 
     private GuiButton btnParentDropdown;
     private GuiButton btnModeToggle;
+    private GuiButton btnTurnback;
 
     public GuiSubStation(ContainerSubStation container, BlockPos pos) {
         super(container);
@@ -44,6 +47,7 @@ public class GuiSubStation extends GuiContainer {
 
         this.selectedParentId = container.subStation.getParentStationId();
         this.selectedMode = container.subStation.getMode();
+        this.turnback = container.subStation.isTurnback();
     }
 
     @Override
@@ -78,6 +82,10 @@ public class GuiSubStation extends GuiContainer {
         btnModeToggle = new GuiButton(BTN_MODE_TOGGLE, guiLeft + 8, guiTop + 50,
                 GUI_W - 16, 18, "モード: " + selectedMode.label);
         buttonList.add(btnModeToggle);
+
+        btnTurnback = new GuiButton(BTN_TURNBACK, guiLeft + 8, guiTop + 74,
+                GUI_W - 16, 18, turnback ? "§a折り返し" : "§7折り返し");
+        buttonList.add(btnTurnback);
     }
 
     @Override
@@ -88,14 +96,16 @@ public class GuiSubStation extends GuiContainer {
 
     private void sendIfChanged() {
         boolean changed = !java.util.Objects.equals(selectedParentId, container.subStation.getParentStationId())
-                || selectedMode != container.subStation.getMode();
+                || selectedMode != container.subStation.getMode()
+                || turnback != container.subStation.isTurnback();
         if (!changed)
             return;
 
         container.subStation.setParentStationId(selectedParentId);
         container.subStation.setMode(selectedMode);
+        container.subStation.setTurnback(turnback);
         AradPacketHandler.CHANNEL.sendToServer(
-                new PacketSubStationConfig(pos, selectedParentId, selectedMode));
+                new PacketSubStationConfig(pos, selectedParentId, selectedMode, turnback));
     }
 
     @Override
@@ -105,6 +115,9 @@ public class GuiSubStation extends GuiContainer {
             openParentSelector();
         } else if (id == BTN_MODE_TOGGLE) {
             selectedMode = selectedMode.next();
+            rebuildButtons();
+        } else if (id == BTN_TURNBACK) {
+            turnback = !turnback;
             rebuildButtons();
         }
     }
