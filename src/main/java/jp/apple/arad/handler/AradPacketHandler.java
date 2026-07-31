@@ -28,5 +28,7 @@ public final class AradPacketHandler {
                 Side.SERVER);
         CHANNEL.registerMessage(PacketSignalSpeedMarkerConfig.Handler.class, PacketSignalSpeedMarkerConfig.class, id++,
                 Side.SERVER);
+        CHANNEL.registerMessage(PacketSubStationData.Handler.class, PacketSubStationData.class, id++, Side.CLIENT);
+        CHANNEL.registerMessage(PacketSubStationConfig.Handler.class, PacketSubStationConfig.class, id++, Side.SERVER);
     }
 }

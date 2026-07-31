@@ -50,6 +50,11 @@ public class ClientProxy extends CommonProxy {
                         net.minecraftforge.client.model.ModelLoader.setCustomModelResourceLocation(
                                         net.minecraft.item.Item.getItemFromBlock(AradCore.blockSignalSpeedMarker), 0,
                                         sectionMarkerLoc);
+                        net.minecraft.client.renderer.block.model.ModelResourceLocation subStationLoc = new net.minecraft.client.renderer.block.model.ModelResourceLocation(
+                                        "arad:substation", "inventory");
+                                        net.minecraftforge.client.model.ModelLoader.setCustomModelResourceLocation(
+                                        net.minecraft.item.Item.getItemFromBlock(AradCore.blockSubStation), 0, 
+                                        subStationLoc);
                 }
         }
 }

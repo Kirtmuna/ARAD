@@ -1,12 +1,15 @@
 package jp.apple.arad.controller;
 
 import jp.apple.arad.data.StationSnapshot;
+import jp.apple.arad.data.SubStationSnapshot;
 import jp.apple.arad.limit.TileEntitySpeedLimitSign;
 import jp.apple.arad.route.Route;
 import jp.apple.arad.route.RouteManager;
 import jp.apple.arad.section.SectionSlot;
 import jp.apple.arad.station.StationRegistry;
 import jp.apple.arad.station.TileEntityStation;
+import jp.apple.arad.substation.SubStationMode;
+import jp.apple.arad.substation.SubStationRegistry;
 import jp.ngt.rtm.entity.train.EntityTrainBase;
 import jp.ngt.rtm.entity.train.util.Formation;
 import jp.ngt.rtm.entity.train.util.FormationEntry;
@@ -385,11 +388,7 @@ public final class AutoDriveController {
         String targetStationId = (currentStationIdx >= 0 && currentStationIdx < stationIds.size())
                 ? stationIds.get(currentStationIdx)
                 : null;
-        StationSnapshot targetSnap = (targetStationId != null)
-                ? StationRegistry.INSTANCE.getSnapshot(targetStationId)
-                : null;
-        if (targetSnap != null && targetSnap.dim != world.provider.getDimension())
-            targetSnap = null;
+        StationSnapshot targetSnap = resolveStopTarget(targetStationId);
 
         boolean inLaunchGrace = launchGraceTicks > 0;
         if (inLaunchGrace)
@@ -1298,5 +1297,24 @@ public final class AutoDriveController {
             }
         }
         return -1;
+    }
+    private StationSnapshot resolveStopTarget(String stationId) {
+        if (stationId == null)
+            return null;
+        StationSnapshot base = StationRegistry.INSTANCE.getSnapshot(stationId);
+        if (base == null)
+            return null;
+
+        if (!reversed)
+            return base;
+
+        jp.apple.arad.data.SubStationSnapshot sub = jp.apple.arad.substation.SubStationRegistry.INSTANCE
+                .findByParent(stationId, jp.apple.arad.substation.SubStationMode.STOP_POSITION_CORRECTION);
+        if (sub != null && sub.dim == base.dim) {
+            return new StationSnapshot(
+                    base.id, base.name, sub.x, sub.z, base.dim,
+                    base.doorLeft, base.doorRight, base.spawnReversed, base.turnback, base.dwellTicks);
+        }
+        return base;
     }
 }

@@ -5,6 +5,7 @@ import jp.apple.arad.limit.TileEntitySpeedLimitSign;
 import jp.apple.arad.section.TileEntitySectionMarker;
 import jp.apple.arad.signalspeed.TileEntitySignalSpeedMarker;
 import jp.apple.arad.station.TileEntityStation;
+import jp.apple.arad.substation.TileEntitySubStation;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
@@ -17,6 +18,7 @@ public class AradGuiHandler implements IGuiHandler {
     public static final int GUI_SPEED_LIMIT = 1;
     public static final int GUI_SECTION_MARKER = 2;
     public static final int GUI_SIGNAL_SPEED_MARKER = 3;
+    public static final int GUI_SUBSTATION = 4;
 
     @Override
     public Object getServerGuiElement(int id, EntityPlayer player, World world, int x, int y, int z) {
@@ -32,6 +34,9 @@ public class AradGuiHandler implements IGuiHandler {
         }
         if (id == GUI_SIGNAL_SPEED_MARKER && te instanceof TileEntitySignalSpeedMarker) {
             return new ContainerSignalSpeedMarker((TileEntitySignalSpeedMarker) te);
+        }
+        if (id == GUI_SUBSTATION && te instanceof TileEntitySubStation) {
+            return new ContainerSubStation((TileEntitySubStation) te);
         }
         return null;
     }
@@ -55,6 +60,11 @@ public class AradGuiHandler implements IGuiHandler {
         if (id == GUI_SIGNAL_SPEED_MARKER && te instanceof TileEntitySignalSpeedMarker) {
             TileEntitySignalSpeedMarker marker = (TileEntitySignalSpeedMarker) te;
             return new GuiSignalSpeedMarker(marker, new BlockPos(x, y, z));
+        }
+        if (id == GUI_SUBSTATION && te instanceof TileEntitySubStation) {
+            TileEntitySubStation sub = (TileEntitySubStation) te;
+            ContainerSubStation container = new ContainerSubStation(sub);
+            return new GuiSubStation(container, new BlockPos(x, y, z));
         }
         return null;
     }

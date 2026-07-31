@@ -11,6 +11,8 @@ import jp.apple.arad.signalspeed.BlockSignalSpeedMarker;
 import jp.apple.arad.signalspeed.TileEntitySignalSpeedMarker;
 import jp.apple.arad.station.BlockStation;
 import jp.apple.arad.station.TileEntityStation;
+import jp.apple.arad.substation.BlockSubStation;
+import jp.apple.arad.substation.TileEntitySubStation;
 import net.minecraft.item.ItemBlock;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventHandler;
@@ -39,6 +41,7 @@ public class AradCore {
     public static BlockSpeedLimitSign blockSpeedLimitSign;
     public static BlockSectionMarker blockSectionMarker;
     public static BlockSignalSpeedMarker blockSignalSpeedMarker;
+    public static BlockSubStation blockSubStation;
 
     @Instance(MOD_ID)
     public static AradCore INSTANCE;
@@ -58,11 +61,14 @@ public class AradCore {
         blockSectionMarker.setCreativeTab(tabAppleLib);
         blockSignalSpeedMarker = new BlockSignalSpeedMarker();
         blockSignalSpeedMarker.setCreativeTab(tabAppleLib);
+        blockSubStation = new BlockSubStation();
+        blockSubStation.setCreativeTab(tabAppleLib);
 
         GameRegistry.registerTileEntity(TileEntityStation.class, "arad:station");
         GameRegistry.registerTileEntity(TileEntitySpeedLimitSign.class, "arad:speed_limit_sign");
         GameRegistry.registerTileEntity(TileEntitySectionMarker.class, "arad:section_marker");
         GameRegistry.registerTileEntity(TileEntitySignalSpeedMarker.class, "arad:signal_speed_marker");
+        GameRegistry.registerTileEntity(TileEntitySubStation.class, "arad:substation");
 
         AradPacketHandler.register();
         proxy.preInit(event);
@@ -89,6 +95,7 @@ public class AradCore {
             event.getRegistry().register(blockSpeedLimitSign);
             event.getRegistry().register(blockSectionMarker);
             event.getRegistry().register(blockSignalSpeedMarker);
+            event.getRegistry().register(blockSubStation);
         }
 
         @net.minecraftforge.fml.common.eventhandler.SubscribeEvent
@@ -101,6 +108,8 @@ public class AradCore {
                     .register(new ItemBlock(blockSectionMarker).setRegistryName(blockSectionMarker.getRegistryName()));
             event.getRegistry().register(
                     new ItemBlock(blockSignalSpeedMarker).setRegistryName(blockSignalSpeedMarker.getRegistryName()));
+            event.getRegistry().register(
+                    new ItemBlock(blockSubStation).setRegistryName(blockSubStation.getRegistryName()));
         }
     }
 }
