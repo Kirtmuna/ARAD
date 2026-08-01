@@ -324,7 +324,7 @@ public final class AutoDriveController {
 
         switch (state) {
             case STOP_WAIT_OPEN:
-                tickStopWaitOpen(formation, dt);
+                tickStopWaitOpen(formation, route.stationIds, dt);
                 break;
             case DOOR_OPEN:
                 tickDoorOpen(world, formation, lead, route.stationIds, dt);
@@ -494,11 +494,12 @@ public final class AutoDriveController {
         setTarget(NOTCH_MAX);
     }
 
-    private void tickStopWaitOpen(Formation formation, int dt) {
+    private void tickStopWaitOpen(Formation formation, List<String> stationIds, int dt) {
         holdStationStop(formation);
         stuckTicks = 0;
         dwellTimer -= dt;
         if (dwellTimer <= 0) {
+            applyRole(formation, stationIds);
             state = DriveState.DOOR_OPEN;
             dwellInitialized = false;
         }
@@ -568,11 +569,6 @@ public final class AutoDriveController {
     }
 
     private void departAfterStop(Formation formation, List<String> stationIds) {
-        String departedStationId = (currentStationIdx >= 0 && currentStationIdx < stationIds.size())
-                ? stationIds.get(currentStationIdx)
-                : null;
-        boolean turnback = isTurnbackStation(departedStationId);
-
         currentStationIdx++;
         arrivalLatched = false;
         arriveConfirmTicks = 0;
@@ -581,12 +577,6 @@ public final class AutoDriveController {
         odometerReady = false;
         state = DriveState.EN_ROUTE;
 
-        if (turnback)
-            reversed = !reversed;
-
-        EntityTrainBase lead = getLeadTrain(formation);
-        if (lead != null && !lead.isDead)
-            applyRoleFront(lead);
         applyNotchDirect(formation, 0);
         targetNotch = 1;
         appliedNotch = 0;
@@ -1324,5 +1314,17 @@ public final class AutoDriveController {
                     base.doorLeft, base.doorRight, base.spawnReversed, base.turnback, base.dwellTicks);
         }
         return base;
+    }
+    private void applyRole(Formation formation, List<String> stationIds) {
+        String departedStationId = (currentStationIdx >= 0 && currentStationIdx < stationIds.size())
+                ? stationIds.get(currentStationIdx)
+                : null;
+        boolean turnback = isTurnbackStation(departedStationId);
+        if (turnback)
+            reversed = !reversed;
+
+        EntityTrainBase lead = getLeadTrain(formation);
+        if (lead != null && !lead.isDead)
+            applyRoleFront(lead);
     }
 }
