@@ -84,7 +84,7 @@ public final class AutoDriveController {
     private static final float SECTION_APPROACH_MARGIN_KMH = 15.0f;
 
     private static final double SECTION_STOP_PHASE_MARGIN = 1.05;
-    private static final int SLOT_CHECK_INTERVAL = 4;
+    private static final int SLOT_CHECK_INTERVAL = 1;
     private final long formationId;
     private final String routeId;
     private final int lineFormationIndex;
