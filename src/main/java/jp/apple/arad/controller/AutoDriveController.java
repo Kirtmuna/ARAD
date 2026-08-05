@@ -505,7 +505,7 @@ public final class AutoDriveController {
         }
     }
 
-    private void tickDoorOpen(World world, Formation formation, EntityTrainBase lead,
+    private void tickDoorOpen(World world, Formation formation, EntityTrainBase lead, 
             List<String> stationIds, int dt) {
         TileEntityStation cs = getStation(stationIds, currentStationIdx);
         StationSnapshot ss = getStationSnapshot(stationIds, currentStationIdx);
@@ -519,6 +519,15 @@ public final class AutoDriveController {
                 dwell = ss.dwellTicks;
                 doorData = ss.getDoorData();
             }
+
+            String stationId = (currentStationIdx >= 0 && currentStationIdx < stationIds.size())
+                    ? stationIds.get(currentStationIdx)
+                    : null;
+            int dim = (ss != null) ? ss.dim : (cs != null && cs.getWorld() != null ? cs.getWorld().provider.getDimension() : 0);
+            jp.apple.arad.data.SubStationSnapshot chosen = resolveActiveSubStation(stationId, dim, world, reversed);
+            if (chosen != null)
+                doorData = chosen.getDoorData();
+
             dwellTimer = dwell;
             dwellInitialized = true;
             applyDoorState(formation, doorData);
@@ -533,7 +542,7 @@ public final class AutoDriveController {
                 state = DriveState.DOOR_OPEN_SIGNAL_WAIT;
                 return;
             }
-            proceedToDoorClose(formation, cs, ss, stationIds);
+            proceedToDoorClose(formation, cs, ss, stationIds, world);
         }
     }
 
@@ -544,12 +553,23 @@ public final class AutoDriveController {
         if (!isNextSignalStop(world)) {
             TileEntityStation cs = getStation(stationIds, currentStationIdx);
             StationSnapshot ss = getStationSnapshot(stationIds, currentStationIdx);
-            proceedToDoorClose(formation, cs, ss, stationIds);
+            proceedToDoorClose(formation, cs, ss, stationIds, world);
         }
     }
 
-    private void proceedToDoorClose(Formation formation, TileEntityStation cs, StationSnapshot ss, List<String> stationIds) {
-        byte doorData = (cs != null) ? cs.getDoorData() : (ss != null ? ss.getDoorData() : (byte) 3);
+    private void proceedToDoorClose(Formation formation, TileEntityStation cs, StationSnapshot ss, List<String> stationIds, World world) {
+        String stationId = (currentStationIdx >= 0 && currentStationIdx < stationIds.size())
+                ? stationIds.get(currentStationIdx)
+                : null;
+        int dim = (ss != null) ? ss.dim : (cs != null && cs.getWorld() != null ? cs.getWorld().provider.getDimension() : 0);
+        jp.apple.arad.data.SubStationSnapshot chosen = resolveActiveSubStation(stationId, dim, world, reversed);
+
+        byte doorData;
+        if (chosen != null)
+            doorData = chosen.getDoorData();
+        else
+            doorData = (cs != null) ? cs.getDoorData() : (ss != null ? ss.getDoorData() : (byte) 3);
+
         if (doorData == 0) {
             departAfterStop(formation, stationIds);
         } else {

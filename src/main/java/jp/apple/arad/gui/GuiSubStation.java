@@ -18,11 +18,13 @@ import java.util.stream.Collectors;
 public class GuiSubStation extends GuiContainer {
 
     private static final int GUI_W = 196;
-    private static final int GUI_H = 100;
+    private static final int GUI_H = 200;
 
     private static final int BTN_PARENT_DROPDOWN = 10;
     private static final int BTN_MODE_TOGGLE = 11;
     private static final int BTN_TURNBACK = 12;
+    private static final int BTN_DOOR_LEFT = 20;
+    private static final int BTN_DOOR_RIGHT = 21;
 
     private final ContainerSubStation container;
     private final BlockPos pos;
@@ -31,12 +33,16 @@ public class GuiSubStation extends GuiContainer {
     private String selectedParentName = "(未選択)";
     private SubStationMode selectedMode;
     private boolean turnback;
+    private boolean doorLeft;
+    private boolean doorRight;
 
     private List<StationSnapshot> stationOptions = new ArrayList<>();
 
     private GuiButton btnParentDropdown;
     private GuiButton btnModeToggle;
     private GuiButton btnTurnback;
+    private GuiButton btnDoorLeft;
+    private GuiButton btnDoorRight;
 
     public GuiSubStation(ContainerSubStation container, BlockPos pos) {
         super(container);
@@ -48,6 +54,8 @@ public class GuiSubStation extends GuiContainer {
         this.selectedParentId = container.subStation.getParentStationId();
         this.selectedMode = container.subStation.getMode();
         this.turnback = container.subStation.isTurnback();
+        this.doorLeft = container.subStation.isDoorLeft();
+        this.doorRight = container.subStation.isDoorRight();
     }
 
     @Override
@@ -86,6 +94,14 @@ public class GuiSubStation extends GuiContainer {
         btnTurnback = new GuiButton(BTN_TURNBACK, guiLeft + 8, guiTop + 74,
                 GUI_W - 16, 18, turnback ? "§a折り返し" : "§7折り返し");
         buttonList.add(btnTurnback);
+        
+        btnDoorLeft = new GuiButton(BTN_DOOR_LEFT, guiLeft + 8, guiTop + 98, (GUI_W - 20) / 2, 18,
+                doorLeft ? "§a◀ 左ドア" : "§7◀ 左ドア");
+        buttonList.add(btnDoorLeft);
+
+        btnDoorRight = new GuiButton(BTN_DOOR_RIGHT, guiLeft + 12 + (GUI_W - 20) / 2, guiTop + 98, (GUI_W - 20) / 2, 18,
+                doorRight ? "§a右ドア ▶" : "§7右ドア ▶");
+        buttonList.add(btnDoorRight);
     }
 
     @Override
@@ -97,15 +113,19 @@ public class GuiSubStation extends GuiContainer {
     private void sendIfChanged() {
         boolean changed = !java.util.Objects.equals(selectedParentId, container.subStation.getParentStationId())
                 || selectedMode != container.subStation.getMode()
-                || turnback != container.subStation.isTurnback();
+                || turnback != container.subStation.isTurnback()
+                || doorLeft != container.subStation.isDoorLeft()
+                || doorRight != container.subStation.isDoorRight();
         if (!changed)
             return;
 
         container.subStation.setParentStationId(selectedParentId);
         container.subStation.setMode(selectedMode);
         container.subStation.setTurnback(turnback);
+        container.subStation.setDoorLeft(doorLeft);
+        container.subStation.setDoorRight(doorRight);
         AradPacketHandler.CHANNEL.sendToServer(
-                new PacketSubStationConfig(pos, selectedParentId, selectedMode, turnback));
+                new PacketSubStationConfig(pos, selectedParentId, selectedMode, turnback, doorLeft, doorRight));
     }
 
     @Override
@@ -118,6 +138,12 @@ public class GuiSubStation extends GuiContainer {
             rebuildButtons();
         } else if (id == BTN_TURNBACK) {
             turnback = !turnback;
+            rebuildButtons();
+        } else if (id == BTN_DOOR_LEFT) {
+            doorLeft = !doorLeft;
+            rebuildButtons();
+        } else if (id == BTN_DOOR_RIGHT) {
+            doorRight = !doorRight;
             rebuildButtons();
         }
     }

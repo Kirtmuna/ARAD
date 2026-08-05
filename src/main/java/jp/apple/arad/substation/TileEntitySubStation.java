@@ -14,6 +14,8 @@ public class TileEntitySubStation extends TileEntity implements ITickable {
     private String parentStationId = "";
     private SubStationMode mode = SubStationMode.STOP_POSITION_CORRECTION;
     private boolean turnback = false;
+    private boolean doorLeft = true;
+    private boolean doorRight = true;
     private boolean registered = false;
 
     public boolean isTurnback() {
@@ -24,6 +26,36 @@ public class TileEntitySubStation extends TileEntity implements ITickable {
         this.turnback = turnback;
         markDirty();
         registered = false;
+    }
+
+    public boolean isDoorLeft() {
+        return doorLeft;
+    }
+
+    public void setDoorLeft(boolean v) {
+        this.doorLeft = v;
+        markDirty();
+        registered = false;
+    }
+
+    public boolean isDoorRight() {
+        return doorRight;
+    }
+
+    public void setDoorRight(boolean v) {
+        this.doorRight = v;
+        markDirty();
+        registered = false;
+    }
+
+    public byte getDoorData() {
+        if (doorLeft && doorRight)
+            return 3;
+        if (doorRight)
+            return 1;
+        if (doorLeft)
+            return 2;
+        return 0;
     }
 
     public String getSubStationId() {
@@ -95,6 +127,8 @@ public class TileEntitySubStation extends TileEntity implements ITickable {
         nbt.setString("ParentStationId", parentStationId);
         nbt.setString("Mode", mode.name());
         nbt.setBoolean("Turnback", turnback);
+        nbt.setBoolean("DoorLeft", doorLeft);
+        nbt.setBoolean("DoorRight", doorRight);
         return nbt;
     }
 
@@ -114,6 +148,10 @@ public class TileEntitySubStation extends TileEntity implements ITickable {
         }
         if (nbt.hasKey("Turnback"))
             turnback = nbt.getBoolean("Turnback");
+        if (nbt.hasKey("DoorLeft"))
+            doorLeft = nbt.getBoolean("DoorLeft");
+        if (nbt.hasKey("DoorRight"))
+            doorRight = nbt.getBoolean("DoorRight");
         registered = false;
     }
 }

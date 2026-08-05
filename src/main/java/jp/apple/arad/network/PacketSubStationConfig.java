@@ -23,17 +23,22 @@ public final class PacketSubStationConfig implements IMessage {
     private String parentStationId;
     private String mode;
     private boolean turnback;
+    private boolean doorLeft;
+    private boolean doorRight;
 
     public PacketSubStationConfig() {
     }
-
-    public PacketSubStationConfig(BlockPos pos, String parentStationId, SubStationMode mode, boolean turnback) {
+    
+    public PacketSubStationConfig(BlockPos pos, String parentStationId, SubStationMode mode,
+                                  boolean turnback, boolean doorLeft, boolean doorRight) {
         this.x = pos.getX();
         this.y = pos.getY();
         this.z = pos.getZ();
         this.parentStationId = parentStationId == null ? "" : parentStationId;
         this.mode = mode.name();
         this.turnback = turnback;
+        this.doorLeft = doorLeft;
+        this.doorRight = doorRight;
     }
 
     @Override
@@ -48,6 +53,8 @@ public final class PacketSubStationConfig implements IMessage {
         buf.writeByte(Math.min(mb.length, 255));
         buf.writeBytes(mb, 0, Math.min(mb.length, 255));
         buf.writeBoolean(turnback);
+        buf.writeBoolean(doorLeft);
+        buf.writeBoolean(doorRight);
     }
 
     @Override
@@ -64,6 +71,8 @@ public final class PacketSubStationConfig implements IMessage {
         buf.readBytes(mb);
         mode = new String(mb, StandardCharsets.UTF_8);
         turnback = buf.readBoolean();
+        doorLeft = buf.readBoolean();
+        doorRight = buf.readBoolean();
     }
 
     public static final class Handler implements IMessageHandler<PacketSubStationConfig, IMessage> {
@@ -80,6 +89,8 @@ public final class PacketSubStationConfig implements IMessage {
                 TileEntitySubStation sub = (TileEntitySubStation) te;
                 sub.setParentStationId(msg.parentStationId);
                 sub.setTurnback(msg.turnback);
+                sub.setDoorLeft(msg.doorLeft);
+                sub.setDoorRight(msg.doorRight);
                 try {
                     sub.setMode(SubStationMode.valueOf(msg.mode));
                 } catch (IllegalArgumentException ignored) {

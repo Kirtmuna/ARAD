@@ -11,9 +11,11 @@ public final class SubStationSnapshot {
     public final int blockX;
     public final int blockY;
     public final int blockZ;
+    public final boolean doorLeft;
+    public final boolean doorRight;
 
     public SubStationSnapshot(String id, String parentStationId, float x, float z, int dim, String mode,
-                              boolean turnback, int blockX, int blockY, int blockZ) {
+                              boolean turnback, int blockX, int blockY, int blockZ, boolean doorLeft, boolean doorRight) {
         this.id = id;
         this.parentStationId = parentStationId;
         this.x = x;
@@ -24,5 +26,17 @@ public final class SubStationSnapshot {
         this.blockX = blockX;
         this.blockY = blockY;
         this.blockZ = blockZ;
+        this.doorLeft = doorLeft;
+        this.doorRight = doorRight;
+    }
+
+    public byte getDoorData() {
+        if (doorLeft && doorRight)
+            return 3;
+        if (doorRight)
+            return 1;
+        if (doorLeft)
+            return 2;
+        return 0;
     }
 }

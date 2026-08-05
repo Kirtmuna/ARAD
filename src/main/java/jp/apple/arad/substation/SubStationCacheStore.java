@@ -64,7 +64,9 @@ public final class SubStationCacheStore extends WorldSavedData {
                     tag.hasKey("turnback") && tag.getBoolean("turnback"),
                     tag.getInteger("blockX"),
                     tag.getInteger("blockY"),
-                    tag.getInteger("blockZ"));
+                    tag.getInteger("blockZ"),
+                    !tag.hasKey("doorLeft") || tag.getBoolean("doorLeft"),
+                    !tag.hasKey("doorRight") || tag.getBoolean("doorRight"));
             if (s.id != null && !s.id.isEmpty())
                 snapshotMap.put(s.id, s);
         }
@@ -85,6 +87,8 @@ public final class SubStationCacheStore extends WorldSavedData {
             tag.setInteger("blockX", s.blockX);
             tag.setInteger("blockY", s.blockY);
             tag.setInteger("blockZ", s.blockZ);
+            tag.setBoolean("doorLeft", s.doorLeft);
+            tag.setBoolean("doorRight", s.doorRight);
             list.appendTag(tag);
         }
         nbt.setTag("subStations", list);
