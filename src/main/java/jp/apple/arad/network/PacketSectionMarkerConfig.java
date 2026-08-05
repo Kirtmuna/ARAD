@@ -19,13 +19,15 @@ public final class PacketSectionMarkerConfig implements IMessage {
 
     private BlockPos markerPos;
     private List<SectionSlot> slots;
+    private boolean requireRedstone;
 
     public PacketSectionMarkerConfig() {
     }
 
-    public PacketSectionMarkerConfig(BlockPos markerPos, List<SectionSlot> slots) {
+    public PacketSectionMarkerConfig(BlockPos markerPos, List<SectionSlot> slots, boolean requireRedstone) {
         this.markerPos = markerPos;
         this.slots = new ArrayList<>(slots);
+        this.requireRedstone = requireRedstone;
     }
 
     private static void writeStr(ByteBuf buf, String s) {
@@ -45,6 +47,7 @@ public final class PacketSectionMarkerConfig implements IMessage {
     @Override
     public void toBytes(ByteBuf buf) {
         buf.writeLong(markerPos.toLong());
+        buf.writeBoolean(requireRedstone);
         buf.writeShort(slots.size());
         for (SectionSlot s : slots) {
             writeStr(buf, s.name);
@@ -57,6 +60,7 @@ public final class PacketSectionMarkerConfig implements IMessage {
     @Override
     public void fromBytes(ByteBuf buf) {
         markerPos = BlockPos.fromLong(buf.readLong());
+        requireRedstone = buf.readBoolean();
         int count = buf.readShort() & 0xFFFF;
         slots = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
@@ -78,7 +82,9 @@ public final class PacketSectionMarkerConfig implements IMessage {
                 TileEntity te = world.getTileEntity(msg.markerPos);
                 if (!(te instanceof TileEntitySectionMarker))
                     return;
-                ((TileEntitySectionMarker) te).setSlots(msg.slots);
+                TileEntitySectionMarker marker = (TileEntitySectionMarker) te;
+                marker.setRequireRedstone(msg.requireRedstone);
+                marker.setSlots(msg.slots);
             });
             return null;
         }

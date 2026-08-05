@@ -19,6 +19,7 @@ public class TileEntitySectionMarker extends TileEntity implements ITickable {
     private final List<SectionSlot> slots = new ArrayList<>();
 
     private final Map<Long, Boolean> blockCapturedByFormation = new HashMap<>();
+    private boolean requireRedstone = false;
 
     public List<SectionSlot> getSlots() {
         return Collections.unmodifiableList(slots);
@@ -49,12 +50,26 @@ public class TileEntitySectionMarker extends TileEntity implements ITickable {
         }
     }
 
+    public boolean isRequireRedstone() {
+        return requireRedstone;
+    }
+
+    public void setRequireRedstone(boolean requireRedstone) {
+        this.requireRedstone = requireRedstone;
+        markDirty();
+        if (world != null && !world.isRemote) {
+            world.notifyBlockUpdate(pos, world.getBlockState(pos), world.getBlockState(pos), 3);
+        }
+    }
+
     @Override
     public void update() {
         World world = getWorld();
         if (world == null || world.isRemote)
             return;
         if (slots.isEmpty())
+            return;
+        if (requireRedstone && !world.isBlockPowered(pos))
             return;
 
         double blockCx = pos.getX() + 0.5;
@@ -94,6 +109,7 @@ public class TileEntitySectionMarker extends TileEntity implements ITickable {
         for (SectionSlot s : slots)
             list.appendTag(s.toNBT());
         nbt.setTag("slots", list);
+        nbt.setBoolean("RequireRedstone", requireRedstone);
         return nbt;
     }
 
@@ -108,6 +124,8 @@ public class TileEntitySectionMarker extends TileEntity implements ITickable {
                 slots.add(SectionSlot.fromNBT(list.getCompoundTagAt(i)));
             }
         }
+        if (nbt.hasKey("RequireRedstone"))
+            requireRedstone = nbt.getBoolean("RequireRedstone");
     }
 
     @Override
@@ -122,14 +140,6 @@ public class TileEntitySectionMarker extends TileEntity implements ITickable {
 
     @Override
     public void onDataPacket(NetworkManager net, SPacketUpdateTileEntity pkt) {
-        NBTTagCompound nbt = pkt.getNbtCompound();
-        slots.clear();
-        blockCapturedByFormation.clear();
-        if (nbt.hasKey("slots")) {
-            NBTTagList list = nbt.getTagList("slots", 10);
-            for (int i = 0; i < list.tagCount(); i++) {
-                slots.add(SectionSlot.fromNBT(list.getCompoundTagAt(i)));
-            }
-        }
+        readFromNBT(pkt.getNbtCompound());
     }
 }

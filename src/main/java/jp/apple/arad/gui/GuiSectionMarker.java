@@ -42,6 +42,7 @@ public class GuiSectionMarker extends GuiScreen {
     private static final int BTN_ADD = 10;
     private static final int BTN_SAVE = 11;
     private static final int BTN_CANCEL = 12;
+    private static final int BTN_RS_TOGGLE = 13;
     private static final int BTN_PASTE_SIG = 20;
     private static final int BTN_PASTE_PASS = 21;
     private static final int BTN_DEL_BASE = 100;
@@ -60,6 +61,7 @@ public class GuiSectionMarker extends GuiScreen {
     private final BlockPos pos;
     private final List<SectionSlot> editSlots = new ArrayList<>();
     private int selectedSlot = -1;
+    private boolean requireRedstone;
 
     private GuiTextField fieldName;
     private GuiTextField fieldSigX, fieldSigY, fieldSigZ;
@@ -70,6 +72,7 @@ public class GuiSectionMarker extends GuiScreen {
     public GuiSectionMarker(TileEntitySectionMarker te, BlockPos pos) {
         this.te = te;
         this.pos = pos;
+        this.requireRedstone = te.isRequireRedstone();
         for (SectionSlot s : te.getSlots())
             editSlots.add(s.copy());
     }
@@ -86,6 +89,7 @@ public class GuiSectionMarker extends GuiScreen {
 
         int fy = gy + GUI_H - FOOTER_H + 4;
         buttonList.add(new GuiButton(BTN_ADD, gx + 6, fy, 100, 20, "＋ スロット追加"));
+        buttonList.add(new GuiButton(BTN_RS_TOGGLE, gx + 112, fy, 90, 20, requireRedstone ? "§aRS式: ON" : "§7RS式: OFF"));
         buttonList.add(new GuiButton(BTN_SAVE, gx + GUI_W - 200, fy, 94, 20, "保存"));
         buttonList.add(new GuiButton(BTN_CANCEL, gx + GUI_W - 100, fy, 94, 20, "キャンセル"));
 
@@ -262,12 +266,15 @@ public class GuiSectionMarker extends GuiScreen {
         } else if (id == BTN_SAVE) {
             flushFields();
             AradPacketHandler.CHANNEL.sendToServer(
-                    new PacketSectionMarkerConfig(pos, editSlots));
+                    new PacketSectionMarkerConfig(pos, editSlots, requireRedstone));
             mc.displayGuiScreen(null);
 
         } else if (id == BTN_CANCEL) {
             mc.displayGuiScreen(null);
 
+        } else if (id == BTN_RS_TOGGLE) {
+            requireRedstone = !requireRedstone;
+            initGui();
         } else if (id == BTN_PASTE_SIG) {
             pasteSig();
 
