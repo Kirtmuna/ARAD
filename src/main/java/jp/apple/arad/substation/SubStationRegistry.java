@@ -24,7 +24,10 @@ public final class SubStationRegistry {
                 (float) (te.getPos().getZ() + 0.5),
                 te.getWorld().provider.getDimension(),
                 te.getMode().name(),
-                te.isTurnback());
+                te.isTurnback(),
+                te.getPos().getX(),
+                te.getPos().getY(),
+                te.getPos().getZ());
         cache.put(snap.id, snap);
         if (!te.getWorld().isRemote) {
             SubStationCacheStore.get(te.getWorld()).upsert(snap);
@@ -64,13 +67,14 @@ public final class SubStationRegistry {
         return loadedMap.get(id);
     }
 
-    public SubStationSnapshot findByParent(String parentStationId, SubStationMode mode) {
+    public List<SubStationSnapshot> findAllByParent(String parentStationId) {
+        List<SubStationSnapshot> result = new ArrayList<>();
         if (parentStationId == null)
-            return null;
+            return result;
         for (SubStationSnapshot s : cache.values()) {
-            if (parentStationId.equals(s.parentStationId) && mode.name().equals(s.mode))
-                return s;
+            if (parentStationId.equals(s.parentStationId))
+                result.add(s);
         }
-        return null;
+        return result;
     }
 }

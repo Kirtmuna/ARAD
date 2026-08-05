@@ -1,7 +1,8 @@
 package jp.apple.arad.substation;
 
 public enum SubStationMode {
-    STOP_POSITION_CORRECTION("停車位置補正");
+    STOP_POSITION_CORRECTION("停車位置補正"),
+    RS_STOP_POSITION_CORRECTION("RS式停車位置補正");
 
     public final String label;
 

@@ -50,6 +50,9 @@ public final class PacketSubStationData implements IMessage {
             buf.writeInt(s.dim);
             writeStr(buf, s.mode);
             buf.writeBoolean(s.turnback);
+            buf.writeInt(s.blockX);
+            buf.writeInt(s.blockY);
+            buf.writeInt(s.blockZ);
         }
     }
 
@@ -61,7 +64,8 @@ public final class PacketSubStationData implements IMessage {
             subStations.add(new SubStationSnapshot(
                     readStr(buf), readStr(buf),
                     buf.readFloat(), buf.readFloat(),
-                    buf.readInt(), readStr(buf), buf.readBoolean()));
+                    buf.readInt(), readStr(buf), buf.readBoolean(),
+                    buf.readInt(), buf.readInt(), buf.readInt()));
         }
     }
 

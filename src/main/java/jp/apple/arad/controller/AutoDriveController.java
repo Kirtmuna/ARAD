@@ -324,7 +324,7 @@ public final class AutoDriveController {
 
         switch (state) {
             case STOP_WAIT_OPEN:
-                tickStopWaitOpen(formation, route.stationIds, dt);
+                tickStopWaitOpen(formation, route.stationIds, world, dt);
                 break;
             case DOOR_OPEN:
                 tickDoorOpen(world, formation, lead, route.stationIds, dt);
@@ -388,7 +388,7 @@ public final class AutoDriveController {
         String targetStationId = (currentStationIdx >= 0 && currentStationIdx < stationIds.size())
                 ? stationIds.get(currentStationIdx)
                 : null;
-        StationSnapshot targetSnap = resolveStopTarget(targetStationId);
+        StationSnapshot targetSnap = resolveStopTarget(targetStationId, world);
 
         boolean inLaunchGrace = launchGraceTicks > 0;
         if (inLaunchGrace)
@@ -494,12 +494,12 @@ public final class AutoDriveController {
         setTarget(NOTCH_MAX);
     }
 
-    private void tickStopWaitOpen(Formation formation, List<String> stationIds, int dt) {
+    private void tickStopWaitOpen(Formation formation, List<String> stationIds, World world, int dt) {
         holdStationStop(formation);
         stuckTicks = 0;
         dwellTimer -= dt;
         if (dwellTimer <= 0) {
-            applyRole(formation, stationIds);
+            applyRole(formation, stationIds, world);
             state = DriveState.DOOR_OPEN;
             dwellInitialized = false;
         }
@@ -1268,16 +1268,15 @@ public final class AutoDriveController {
         }
         return resolveSpeedKmh(slot, level) == 0;
     }
-    private boolean isTurnbackStation(String stationId) {
+    private boolean isTurnbackStation(String stationId, World world) {
         if (stationId == null)
             return false;
 
-        if (reversed) {
-            SubStationSnapshot sub = SubStationRegistry.INSTANCE
-                    .findByParent(stationId, SubStationMode.STOP_POSITION_CORRECTION);
-            if (sub != null)
-                return sub.turnback;
-        }
+        StationSnapshot base = StationRegistry.INSTANCE.getSnapshot(stationId);
+        int dim = (base != null) ? base.dim : 0;
+        SubStationSnapshot chosen = resolveActiveSubStation(stationId, dim, world, reversed);
+        if (chosen != null)
+            return chosen.turnback;
 
         TileEntityStation te = StationRegistry.INSTANCE.get(stationId);
         if (te != null)
@@ -1296,30 +1295,54 @@ public final class AutoDriveController {
         }
         return -1;
     }
-    private StationSnapshot resolveStopTarget(String stationId) {
+    private StationSnapshot resolveStopTarget(String stationId, World world) {
         if (stationId == null)
             return null;
         StationSnapshot base = StationRegistry.INSTANCE.getSnapshot(stationId);
         if (base == null)
             return null;
 
-        if (!reversed)
+        SubStationSnapshot chosen = resolveActiveSubStation(stationId, base.dim, world, reversed);
+        if (chosen == null)
             return base;
 
-        jp.apple.arad.data.SubStationSnapshot sub = jp.apple.arad.substation.SubStationRegistry.INSTANCE
-                .findByParent(stationId, jp.apple.arad.substation.SubStationMode.STOP_POSITION_CORRECTION);
-        if (sub != null && sub.dim == base.dim) {
-            return new StationSnapshot(
-                    base.id, base.name, sub.x, sub.z, base.dim,
-                    base.doorLeft, base.doorRight, base.spawnReversed, base.turnback, base.dwellTicks);
-        }
-        return base;
+        return new StationSnapshot(
+                base.id, base.name, chosen.x, chosen.z, base.dim,
+                base.doorLeft, base.doorRight, base.spawnReversed, base.turnback, base.dwellTicks);
     }
-    private void applyRole(Formation formation, List<String> stationIds) {
+    private SubStationSnapshot resolveActiveSubStation(
+            String stationId, int dim, World world, boolean allowDefaultCorrection) {
+        List<SubStationSnapshot> subs =
+                SubStationRegistry.INSTANCE.findAllByParent(stationId);
+
+        SubStationSnapshot rsMatch = null;
+        SubStationSnapshot defaultMatch = null;
+
+        for (SubStationSnapshot sub : subs) {
+            if (sub.dim != dim)
+                continue;
+            if (SubStationMode.RS_STOP_POSITION_CORRECTION.name().equals(sub.mode)) {
+                if (rsMatch == null) {
+                    BlockPos pos =
+                            new BlockPos(sub.blockX, sub.blockY, sub.blockZ);
+                    if (world.isBlockPowered(pos)) {
+                        rsMatch = sub;
+                    }
+                }
+            } else if (allowDefaultCorrection
+                    && SubStationMode.STOP_POSITION_CORRECTION.name().equals(sub.mode)) {
+                if (defaultMatch == null)
+                    defaultMatch = sub;
+            }
+        }
+
+        return (rsMatch != null) ? rsMatch : defaultMatch;
+    }
+    private void applyRole(Formation formation, List<String> stationIds, World world) {
         String departedStationId = (currentStationIdx >= 0 && currentStationIdx < stationIds.size())
                 ? stationIds.get(currentStationIdx)
                 : null;
-        boolean turnback = isTurnbackStation(departedStationId);
+        boolean turnback = isTurnbackStation(departedStationId, world);
         if (turnback)
             reversed = !reversed;
 
