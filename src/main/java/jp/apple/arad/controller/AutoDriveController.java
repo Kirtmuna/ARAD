@@ -384,6 +384,7 @@ public final class AutoDriveController {
         float speed = Math.abs(lead.getSpeed());
         float[] decel = getDecelTableCached(lead);
         updateLimitBlockState(world, lead, dt);
+        updateSectionSlotProgress(lead);
         double brakePhaseStart = calcBrakeDist(speed, decel[PHASE_LEVEL]) * PHASE_MARGIN;
         String targetStationId = (currentStationIdx >= 0 && currentStationIdx < stationIds.size())
                 ? stationIds.get(currentStationIdx)
@@ -780,19 +781,6 @@ public final class AutoDriveController {
     private boolean applySlotSignalControl(World world, EntityTrainBase lead,
             float speed, float[] decel) {
         if (sectionSlots == null || sectionSlots.isEmpty()) {
-            sectionSpeedLimitKmh = -1;
-            sectionCoastMode = false;
-            return false;
-        }
-
-        if (slotCheckCooldown > 0) {
-            slotCheckCooldown--;
-        } else {
-            slotCheckCooldown = SLOT_CHECK_INTERVAL;
-            advancePassedSlots(lead);
-        }
-
-        if (sectionSlots.isEmpty()) {
             sectionSpeedLimitKmh = -1;
             sectionCoastMode = false;
             return false;
@@ -1369,5 +1357,15 @@ public final class AutoDriveController {
         EntityTrainBase lead = getLeadTrain(formation);
         if (lead != null && !lead.isDead)
             applyRoleFront(lead);
+    }
+    private void updateSectionSlotProgress(EntityTrainBase lead) {
+        if (sectionSlots == null || sectionSlots.isEmpty())
+            return;
+        if (slotCheckCooldown > 0) {
+            slotCheckCooldown--;
+            return;
+        }
+        slotCheckCooldown = SLOT_CHECK_INTERVAL;
+        advancePassedSlots(lead);
     }
 }
