@@ -9,10 +9,13 @@ import jp.apple.arad.station.TileEntityStation;
 import jp.ngt.rtm.entity.train.util.Formation;
 import jp.ngt.rtm.entity.train.util.FormationEntry;
 import jp.ngt.rtm.entity.train.util.FormationManager;
+import jp.ngt.rtm.rail.BlockLargeRailBase;
+import jp.ngt.rtm.rail.TileEntityLargeRailBase;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
+import net.minecraft.util.math.BlockPos;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -34,7 +37,7 @@ public final class AutoDriveManager {
 
     private AutoDriveManager() {
     }
-
+    @Deprecated
     private static boolean isAnyFormationWithin(double sx, double sz, double maxDist) {
         double maxDistSq = maxDist * maxDist;
         for (Formation f : FormationManager.getInstance().getFormations().values()) {
@@ -102,7 +105,7 @@ public final class AutoDriveManager {
 
         if (sched.activeCount == 0) {
 
-            if (!isAnyFormationWithin(sx, sz, SPAWN_CLEAR_RADIUS)) {
+            if (!isRailOccupied(world, firstStation.getPos())) {
                 spawnFormation(world, routeId, route, sched, sx, sz);
             }
             return;
@@ -111,7 +114,7 @@ public final class AutoDriveManager {
         if (!isLastSpawnedFarEnough(sched, sx, sz))
             return;
 
-        if (isAnyFormationWithin(sx, sz, SPAWN_CLEAR_RADIUS))
+        if (isRailOccupied(world, firstStation.getPos()))
             return;
 
         spawnFormation(world, routeId, route, sched, sx, sz);
@@ -318,9 +321,19 @@ public final class AutoDriveManager {
         double sx = firstStation.getPos().getX() + 0.5;
         double sz = firstStation.getPos().getZ() + 0.5;
 
-        if (isAnyFormationWithin(sx, sz, SPAWN_CLEAR_RADIUS))
+        if (isRailOccupied(world, firstStation.getPos()))
             return;
 
         spawnFormation(world, routeId, route, sched, sx, sz);
+    }
+    private static boolean isRailOccupied(World world, BlockPos stationPos) {
+        BlockPos railPos = stationPos.up();
+        if (!(world.getBlockState(railPos).getBlock() instanceof BlockLargeRailBase))
+            return false;
+        TileEntity te = world.getTileEntity(railPos);
+        if (te instanceof TileEntityLargeRailBase) {
+            return ((TileEntityLargeRailBase) te).isTrainOnRail();
+        }
+        return false;
     }
 }
