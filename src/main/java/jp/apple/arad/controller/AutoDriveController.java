@@ -996,6 +996,16 @@ public final class AutoDriveController {
             aheadDistCacheTicks--;
             return aheadDistCache;
         }
+
+        if (predecessorFormationId > 0L && predecessorFormationId != formationId) {
+            AutoDriveController predecessorCtrl = AutoDriveManager.INSTANCE.getController(predecessorFormationId);
+            if (predecessorCtrl != null && predecessorCtrl.isReversed() != this.reversed) {
+                aheadDistCache = -1.0;
+                aheadDistCacheTicks = AHEAD_DIST_REFRESH_TICKS;
+                return aheadDistCache;
+            }
+        }
+
         double detectDist = calcAheadDetectDist(brakePhaseStart) + COL_MARGIN;
         EntityTrainBase tail = resolvePredecessorTail();
         if (tail == null) {
@@ -1367,5 +1377,8 @@ public final class AutoDriveController {
         }
         slotCheckCooldown = SLOT_CHECK_INTERVAL;
         advancePassedSlots(lead);
+    }
+    public boolean isReversed() {
+        return reversed;
     }
 }
