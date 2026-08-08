@@ -6,11 +6,17 @@ import jp.apple.arad.controller.AutoDriveManager;
 import jp.apple.arad.data.RouteSnapshot;
 import jp.apple.arad.data.ServerData;
 import jp.apple.arad.data.StationSnapshot;
+import jp.apple.arad.data.SubStationSnapshot;
 import jp.apple.arad.network.PacketRailData;
 import jp.apple.arad.network.PacketStationRouteData;
+import jp.apple.arad.network.PacketSubStationData;
 import jp.apple.arad.route.RouteManager;
+import jp.apple.arad.station.BlockStation;
 import jp.apple.arad.station.StationRegistry;
 import jp.apple.arad.station.TileEntityStation;
+import jp.apple.arad.substation.BlockSubStation;
+import jp.apple.arad.substation.SubStationRegistry;
+import jp.apple.arad.substation.TileEntitySubStation;
 import net.minecraft.block.Block;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.tileentity.TileEntity;
@@ -123,8 +129,9 @@ public final class CommonAradEventHandler {
 
         Block broken = event.getState().getBlock();
         boolean isRailBlock = isRailRelatedBlock(broken);
-        boolean isStationBlock = broken instanceof jp.apple.arad.station.BlockStation;
-        if (!isRailBlock && !isStationBlock)
+        boolean isStationBlock = broken instanceof BlockStation;
+        boolean isSubStationBlock = broken instanceof BlockSubStation;
+        if (!isRailBlock && !isStationBlock && !isSubStationBlock)
             return;
 
         WorldServer ws = (WorldServer) world;
@@ -142,6 +149,15 @@ public final class CommonAradEventHandler {
             List<StationSnapshot> stations = StationRegistry.INSTANCE.toSnapshots();
             List<RouteSnapshot> routes = RouteManager.get(world).toSnapshots();
             AradPacketHandler.CHANNEL.sendToAll(new PacketStationRouteData(stations, routes));
+        }
+        if (isSubStationBlock) {
+            TileEntity te = world.getTileEntity(event.getPos());
+            if (te instanceof TileEntitySubStation) {
+                SubStationRegistry.INSTANCE.removeFromCache(
+                        world, ((TileEntitySubStation) te).getSubStationId());
+            }
+            List<SubStationSnapshot> subs = SubStationRegistry.INSTANCE.toSnapshots();
+            AradPacketHandler.CHANNEL.sendToAll(new PacketSubStationData(subs));
         }
 
         if (!isRailBlock)
