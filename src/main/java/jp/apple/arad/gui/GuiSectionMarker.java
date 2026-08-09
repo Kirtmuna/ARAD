@@ -11,6 +11,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.lwjgl.input.Keyboard;
+import org.lwjgl.input.Mouse;
 
 import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
@@ -61,6 +62,7 @@ public class GuiSectionMarker extends GuiScreen {
     private final BlockPos pos;
     private final List<SectionSlot> editSlots = new ArrayList<>();
     private int selectedSlot = -1;
+    private int slotScroll = 0;
     private boolean requireRedstone;
 
     private GuiTextField fieldName;
@@ -81,11 +83,19 @@ public class GuiSectionMarker extends GuiScreen {
     public void initGui() {
         gx = (width - GUI_W) / 2;
         gy = (height - GUI_H) / 2;
-        buttonList.clear();
 
         if (selectedSlot < 0 && !editSlots.isEmpty()) {
             selectedSlot = 0;
         }
+        ensureSelectedVisible();
+        clampSlotScroll();
+
+        buildDetailFields();
+        rebuildButtons();
+    }
+    
+    private void rebuildButtons() {
+        buttonList.clear();
 
         int fy = gy + GUI_H - FOOTER_H + 4;
         buttonList.add(new GuiButton(BTN_ADD, gx + 6, fy, 100, 20, "＋ スロット追加"));
@@ -93,13 +103,22 @@ public class GuiSectionMarker extends GuiScreen {
         buttonList.add(new GuiButton(BTN_SAVE, gx + GUI_W - 200, fy, 94, 20, "保存"));
         buttonList.add(new GuiButton(BTN_CANCEL, gx + GUI_W - 100, fy, 94, 20, "キャンセル"));
 
-        for (int i = 0; i < editSlots.size() && i < MAX_ROWS; i++) {
-            int ry = gy + LIST_TOP + i * ROW_H;
-            buttonList.add(new GuiButton(BTN_DEL_BASE + i,
+        int visibleRows = getVisibleRowCount();
+        for (int row = 0; row < visibleRows; row++) {
+            int ry = gy + LIST_TOP + row * ROW_H;
+            buttonList.add(new GuiButton(BTN_DEL_BASE + row,
                     gx + LEFT_W - 22, ry + 2, 20, 14, "×"));
         }
 
-        buildDetailFields();
+        if (selectedSlot >= 0 && selectedSlot < editSlots.size()
+                && fieldSigZ != null && fieldPassZ != null) {
+            int sigVx = fieldSigZ.x + FW + FG;
+            int row1Y = fieldSigZ.y;
+            buttonList.add(new GuiButton(BTN_PASTE_SIG, sigVx, row1Y - 1, VBW, 16, "V"));
+            int pasVx = fieldPassZ.x + FW + FG;
+            int row2Y = fieldPassZ.y;
+            buttonList.add(new GuiButton(BTN_PASTE_PASS, pasVx, row2Y - 1, VBW, 16, "V"));
+        }
     }
 
     private void buildDetailFields() {
@@ -124,10 +143,6 @@ public class GuiSectionMarker extends GuiScreen {
         fieldPassZ = tf(pasX0 + FW + AX_W + FG, row2Y, FW, "0");
 
         if (selectedSlot >= 0 && selectedSlot < editSlots.size()) {
-            int sigVx = fieldSigZ.x + FW + FG;
-            buttonList.add(new GuiButton(BTN_PASTE_SIG, sigVx, row1Y - 1, VBW, 16, "V"));
-            int pasVx = fieldPassZ.x + FW + FG;
-            buttonList.add(new GuiButton(BTN_PASTE_PASS, pasVx, row2Y - 1, VBW, 16, "V"));
             loadToFields(editSlots.get(selectedSlot));
         }
     }
@@ -167,22 +182,31 @@ public class GuiSectionMarker extends GuiScreen {
     }
 
     private void drawLeftPane() {
-        for (int i = 0; i < editSlots.size() && i < MAX_ROWS; i++) {
-            SectionSlot s = editSlots.get(i);
-            int ry = gy + LIST_TOP + i * ROW_H;
-            boolean sel = (i == selectedSlot);
+        int visibleRows = getVisibleRowCount();
+        for (int row = 0; row < visibleRows; row++) {
+            int idx = slotScroll + row;
+            SectionSlot s = editSlots.get(idx);
+            int ry = gy + LIST_TOP + row * ROW_H;
+            boolean sel = (idx == selectedSlot);
             if (sel) {
                 drawRect(gx + 1, ry, gx + LEFT_W, ry + ROW_H, C_SEL_BG);
                 drawRect(gx + 1, ry, gx + 3, ry + ROW_H, C_ACCENT);
             }
             String label = (s.name != null && !s.name.isEmpty())
-                    ? String.format("%d. %s", i + 1, s.name)
-                    : String.format("%d. (%d,%d)", i + 1, s.passX, s.passZ);
+                    ? String.format("%d. %s", idx + 1, s.name)
+                    : String.format("%d. (%d,%d)", idx + 1, s.passX, s.passZ);
             label = fontRenderer.trimStringToWidth(label, LEFT_W - 30);
             drawString(fontRenderer, label, gx + 6, ry + 4, sel ? C_YELLOW : C_TEXT);
         }
         if (editSlots.isEmpty()) {
             drawString(fontRenderer, "§7（スロットなし）", gx + 6, gy + LIST_TOP + 4, C_DIM);
+        }
+        if (editSlots.size() > MAX_ROWS) {
+            int from = slotScroll + 1;
+            int to = slotScroll + visibleRows;
+            String page = "§7" + from + "-" + to + "/" + editSlots.size();
+            int py = gy + LIST_TOP + MAX_ROWS * ROW_H + 3;
+            drawString(fontRenderer, page, gx + 6, py, C_DIM);
         }
     }
 
@@ -282,7 +306,8 @@ public class GuiSectionMarker extends GuiScreen {
             pastePass();
 
         } else if (id >= BTN_DEL_BASE) {
-            int idx = id - BTN_DEL_BASE;
+            int row = id - BTN_DEL_BASE;
+            int idx = slotScroll + row;
             if (idx < editSlots.size()) {
                 if (selectedSlot != idx)
                     flushFields();
@@ -351,19 +376,42 @@ public class GuiSectionMarker extends GuiScreen {
 
         fwdMouse(mx, my, btn);
 
-        for (int i = 0; i < editSlots.size() && i < MAX_ROWS; i++) {
-            int ry = gy + LIST_TOP + i * ROW_H;
+        int visibleRows = getVisibleRowCount();
+        for (int row = 0; row < visibleRows; row++) {
+            int idx = slotScroll + row;
+            int ry = gy + LIST_TOP + row * ROW_H;
             if (mx >= gx + 1 && mx < gx + LEFT_W - 22 && my >= ry && my < ry + ROW_H) {
-                if (i != selectedSlot) {
+                if (idx != selectedSlot) {
                     flushFields();
-                    selectedSlot = i;
-                    loadToFields(editSlots.get(i));
+                    selectedSlot = idx;
+                    loadToFields(editSlots.get(idx));
                 }
                 return;
             }
         }
 
         super.mouseClicked(mx, my, btn);
+    }
+
+    @Override
+    public void handleMouseInput() throws IOException {
+        super.handleMouseInput();
+        int scroll = Mouse.getEventDWheel();
+        if (scroll == 0)
+            return;
+
+        int mx = Mouse.getEventX() * width / mc.displayWidth;
+        int my = height - Mouse.getEventY() * height / mc.displayHeight - 1;
+        boolean overList = mx >= gx && mx < gx + LEFT_W
+                && my >= gy + 16 && my < gy + GUI_H - FOOTER_H;
+        if (!overList)
+            return;
+
+        int old = slotScroll;
+        slotScroll += (scroll > 0) ? -1 : 1;
+        clampSlotScroll();
+        if (old != slotScroll)
+            rebuildButtons();
     }
 
     private void fwdMouse(int mx, int my, int btn) {
@@ -453,6 +501,28 @@ public class GuiSectionMarker extends GuiScreen {
         } catch (NumberFormatException e) {
             return fallback;
         }
+    }
+
+    private int getVisibleRowCount() {
+        return Math.max(0, Math.min(MAX_ROWS, editSlots.size() - slotScroll));
+    }
+
+    private void ensureSelectedVisible() {
+        if (selectedSlot < 0)
+            return;
+        if (selectedSlot < slotScroll) {
+            slotScroll = selectedSlot;
+        } else if (selectedSlot >= slotScroll + MAX_ROWS) {
+            slotScroll = selectedSlot - MAX_ROWS + 1;
+        }
+    }
+
+    private void clampSlotScroll() {
+        int maxScroll = Math.max(0, editSlots.size() - MAX_ROWS);
+        if (slotScroll < 0)
+            slotScroll = 0;
+        if (slotScroll > maxScroll)
+            slotScroll = maxScroll;
     }
 
     @Override
