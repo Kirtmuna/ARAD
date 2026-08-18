@@ -37,7 +37,7 @@ jobs:
           build-scan-terms-of-use-agree: "yes"
 
       - name: Execute Gradle Build
-        run: ./gradlew build --scan
+        run: ./gradlew build --scan -Dorg.gradle.java.home=$JAVA_HOME
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
