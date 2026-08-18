@@ -27,5 +27,3 @@ forge*changelog.txt
 .gitattributes
 # macOS system files
 .DS_Store
-# Applepie
-libs/

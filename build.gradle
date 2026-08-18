@@ -36,7 +36,6 @@ dependencies {
     minecraft 'net.minecraftforge:forge:1.12.2-14.23.5.2860'
 
     compileOnly fileTree(dir: 'libs', include: ['*.jar'])
-    compileOnly files('libs/core.jar')
 
     implementation 'io.sigpipe:jbsdiff:1.0'
     implementation 'org.sejda.imageio:webp-imageio:0.1.6'
