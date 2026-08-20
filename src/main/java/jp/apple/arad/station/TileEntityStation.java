@@ -13,7 +13,8 @@ import net.minecraft.tileentity.TileEntity;
 import java.util.Arrays;
 import java.util.UUID;
 
-import jp.apple.arad.item.ItemArtpeTrain;
+//import jp.apple.arad.item.ItemArtpeTrain;
+import jp.apple.item.ItemArtpeTrain;
 
 public class TileEntityStation extends TileEntity implements IInventory {
 

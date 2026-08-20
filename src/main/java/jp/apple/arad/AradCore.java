@@ -11,7 +11,7 @@ import cpw.mods.fml.common.network.NetworkRegistry;
 import cpw.mods.fml.common.registry.GameRegistry;
 import jp.apple.arad.handler.AradGuiHandler;
 import jp.apple.arad.handler.AradPacketHandler;
-import jp.apple.arad.item.ItemArtpeTrain;
+//import jp.apple.arad.item.ItemArtpeTrain;
 import jp.apple.arad.limit.BlockSpeedLimitSign;
 import jp.apple.arad.limit.TileEntitySpeedLimitSign;
 import jp.apple.arad.proxy.CommonProxy;
@@ -49,7 +49,7 @@ public class AradCore {
     public static BlockSectionMarker blockSectionMarker;
     public static BlockSignalSpeedMarker blockSignalSpeedMarker;
     public static BlockSubStation blockSubStation;
-    public static ItemArtpeTrain itemArtpeTrain;
+//    public static ItemArtpeTrain itemArtpeTrain;
 
     @Instance(MOD_ID)
     public static AradCore INSTANCE;
@@ -71,8 +71,8 @@ public class AradCore {
         blockSignalSpeedMarker.setCreativeTab(tabAradu);
         blockSubStation = new BlockSubStation();
         blockSubStation.setCreativeTab(tabAradu);
-        itemArtpeTrain = new ItemArtpeTrain();
-        itemArtpeTrain.setCreativeTab(tabAradu);
+//        itemArtpeTrain = new ItemArtpeTrain();
+//        itemArtpeTrain.setCreativeTab(tabAradu);
 
         // ブロック登録
         GameRegistry.registerBlock(blockStation, "station");
@@ -82,7 +82,7 @@ public class AradCore {
         GameRegistry.registerBlock(blockSubStation, "substation");
 
         // アイテム登録
-        GameRegistry.registerItem(itemArtpeTrain, "arad_train");
+//        GameRegistry.registerItem(itemArtpeTrain, "arad_train");
 
         // TileEntity登録
         GameRegistry.registerTileEntity(TileEntityStation.class, "arad_station");

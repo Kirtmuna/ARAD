@@ -51,6 +51,7 @@ repositories {
         name = 'JitPack'
         url = 'https://jitpack.io'
     }
+    flatDir { dirs 'libs' }
 }
 
 configurations.configureEach {
@@ -84,6 +85,7 @@ dependencies {
             because 'Fixes XmlStreamReader uncontrolled resource consumption issue (CVE in versions < 2.14.0).'
         }
     }
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
 
     // RTM compatibility target (KaizPatchX), resolved from JitPack
     compileOnly(rfg.deobf(rtmCoordinate))
