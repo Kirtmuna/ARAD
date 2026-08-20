@@ -29,3 +29,7 @@ forge*changelog.txt
 .DS_Store
 # Applepie
 libs/
+
+# WorkSpace
+.original/
+*.code-workspace

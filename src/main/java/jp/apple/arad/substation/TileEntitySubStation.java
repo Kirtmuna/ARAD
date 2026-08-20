@@ -2,13 +2,13 @@ package jp.apple.arad.substation;
 
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.NetworkManager;
-import net.minecraft.network.play.server.SPacketUpdateTileEntity;
+import net.minecraft.network.Packet;
+import net.minecraft.network.play.server.S35PacketUpdateTileEntity;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.ITickable;
 
 import java.util.UUID;
 
-public class TileEntitySubStation extends TileEntity implements ITickable {
+public class TileEntitySubStation extends TileEntity {
 
     private String subStationId = UUID.randomUUID().toString();
     private String parentStationId = "";
@@ -83,8 +83,8 @@ public class TileEntitySubStation extends TileEntity implements ITickable {
     }
 
     @Override
-    public void update() {
-        if (world == null || world.isRemote)
+    public void updateEntity() {
+        if (worldObj == null || worldObj.isRemote)
             return;
         if (!registered) {
             SubStationRegistry.INSTANCE.register(this);
@@ -95,33 +95,30 @@ public class TileEntitySubStation extends TileEntity implements ITickable {
     @Override
     public void invalidate() {
         super.invalidate();
-        if (world != null && !world.isRemote)
+        if (worldObj != null && !worldObj.isRemote)
             SubStationRegistry.INSTANCE.unregister(subStationId);
     }
 
     @Override
     public void onChunkUnload() {
-        if (world != null && !world.isRemote)
+        if (worldObj != null && !worldObj.isRemote)
             SubStationRegistry.INSTANCE.unregister(subStationId);
     }
 
     @Override
-    public SPacketUpdateTileEntity getUpdatePacket() {
-        return new SPacketUpdateTileEntity(this.pos, 1, this.getUpdateTag());
+    public Packet getDescriptionPacket() {
+        NBTTagCompound nbt = new NBTTagCompound();
+        writeToNBT(nbt);
+        return new S35PacketUpdateTileEntity(xCoord, yCoord, zCoord, 1, nbt);
     }
 
     @Override
-    public NBTTagCompound getUpdateTag() {
-        return this.writeToNBT(new NBTTagCompound());
+    public void onDataPacket(NetworkManager net, S35PacketUpdateTileEntity pkt) {
+        readFromNBT(pkt.func_148857_g());
     }
 
     @Override
-    public void onDataPacket(NetworkManager net, SPacketUpdateTileEntity pkt) {
-        this.readFromNBT(pkt.getNbtCompound());
-    }
-
-    @Override
-    public NBTTagCompound writeToNBT(NBTTagCompound nbt) {
+    public void writeToNBT(NBTTagCompound nbt) {
         super.writeToNBT(nbt);
         nbt.setString("SubStationId", subStationId);
         nbt.setString("ParentStationId", parentStationId);
@@ -129,7 +126,6 @@ public class TileEntitySubStation extends TileEntity implements ITickable {
         nbt.setBoolean("Turnback", turnback);
         nbt.setBoolean("DoorLeft", doorLeft);
         nbt.setBoolean("DoorRight", doorRight);
-        return nbt;
     }
 
     @Override

@@ -1,5 +1,6 @@
 package jp.apple.arad.handler;
 
+import cpw.mods.fml.common.network.IGuiHandler;
 import jp.apple.arad.gui.*;
 import jp.apple.arad.limit.TileEntitySpeedLimitSign;
 import jp.apple.arad.section.TileEntitySectionMarker;
@@ -8,9 +9,7 @@ import jp.apple.arad.station.TileEntityStation;
 import jp.apple.arad.substation.TileEntitySubStation;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
-import net.minecraftforge.fml.common.network.IGuiHandler;
 
 public class AradGuiHandler implements IGuiHandler {
 
@@ -22,7 +21,7 @@ public class AradGuiHandler implements IGuiHandler {
 
     @Override
     public Object getServerGuiElement(int id, EntityPlayer player, World world, int x, int y, int z) {
-        TileEntity te = world.getTileEntity(new BlockPos(x, y, z));
+        TileEntity te = world.getTileEntity(x, y, z);
         if (id == GUI_STATION && te instanceof TileEntityStation) {
             return new ContainerStation(player.inventory, (TileEntityStation) te);
         }
@@ -43,28 +42,28 @@ public class AradGuiHandler implements IGuiHandler {
 
     @Override
     public Object getClientGuiElement(int id, EntityPlayer player, World world, int x, int y, int z) {
-        TileEntity te = world.getTileEntity(new BlockPos(x, y, z));
+        TileEntity te = world.getTileEntity(x, y, z);
         if (id == GUI_STATION && te instanceof TileEntityStation) {
             TileEntityStation station = (TileEntityStation) te;
             ContainerStation container = new ContainerStation(player.inventory, station);
-            return new GuiStation(container, new BlockPos(x, y, z));
+            return new GuiStation(container, x, y, z);
         }
         if (id == GUI_SPEED_LIMIT && te instanceof TileEntitySpeedLimitSign) {
             TileEntitySpeedLimitSign sign = (TileEntitySpeedLimitSign) te;
             ContainerSpeedLimitSign container = new ContainerSpeedLimitSign(sign);
-            return new GuiSpeedLimitSign(container, new BlockPos(x, y, z));
+            return new GuiSpeedLimitSign(container, x, y, z);
         }
         if (id == GUI_SECTION_MARKER && te instanceof TileEntitySectionMarker) {
-            return new GuiSectionMarker((TileEntitySectionMarker) te, new BlockPos(x, y, z));
+            return new GuiSectionMarker((TileEntitySectionMarker) te, x, y, z);
         }
         if (id == GUI_SIGNAL_SPEED_MARKER && te instanceof TileEntitySignalSpeedMarker) {
             TileEntitySignalSpeedMarker marker = (TileEntitySignalSpeedMarker) te;
-            return new GuiSignalSpeedMarker(marker, new BlockPos(x, y, z));
+            return new GuiSignalSpeedMarker(marker, x, y, z);
         }
         if (id == GUI_SUBSTATION && te instanceof TileEntitySubStation) {
             TileEntitySubStation sub = (TileEntitySubStation) te;
             ContainerSubStation container = new ContainerSubStation(sub);
-            return new GuiSubStation(container, new BlockPos(x, y, z));
+            return new GuiSubStation(container, x, y, z);
         }
         return null;
     }

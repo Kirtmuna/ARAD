@@ -7,15 +7,17 @@ import jp.apple.arad.handler.AradPacketHandler;
 import jp.apple.arad.route.RouteManager;
 import jp.apple.arad.station.StationRegistry;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.client.Minecraft;
 import net.minecraft.world.WorldServer;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
-import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
+import cpw.mods.fml.common.network.simpleimpl.IMessage;
+import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
+import cpw.mods.fml.common.network.simpleimpl.MessageContext;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
+@SuppressWarnings("unused")
 public final class PacketConfirmRoute implements IMessage {
 
     private String routeName;
@@ -63,25 +65,24 @@ public final class PacketConfirmRoute implements IMessage {
     public static final class Handler implements IMessageHandler<PacketConfirmRoute, IMessage> {
         @Override
         public IMessage onMessage(PacketConfirmRoute msg, MessageContext ctx) {
-            EntityPlayerMP player = ctx.getServerHandler().player;
-            WorldServer world = player.getServerWorld();
+            EntityPlayerMP player = ctx.getServerHandler().playerEntity;
+            WorldServer world = (net.minecraft.world.WorldServer) player.worldObj;
 
-            world.addScheduledTask(() -> {
-                if (msg.stationIds.size() < 2)
-                    return;
+            if (msg.stationIds.size() < 2)
+                return null;
 
-                String name = msg.routeName.isEmpty() ? "新路線" : msg.routeName;
+            String name = msg.routeName.isEmpty() ? "新路線" : msg.routeName;
 
-                RouteManager rm = RouteManager.get(world);
-                String routeId = rm.createRoute(name);
-                for (String sid : msg.stationIds)
-                    rm.addStation(routeId, sid);
+            RouteManager rm = RouteManager.get(world);
+            String routeId = rm.createRoute(name);
+            for (String sid : msg.stationIds)
+                rm.addStation(routeId, sid);
 
-                List<StationSnapshot> stations = StationRegistry.INSTANCE.toSnapshots();
-                List<RouteSnapshot> routes = rm.toSnapshots();
-                AradPacketHandler.CHANNEL.sendToAll(
-                        new PacketStationRouteData(stations, routes));
-            });
+            List<StationSnapshot> stations = StationRegistry.INSTANCE.toSnapshots();
+            List<RouteSnapshot> routes = rm.toSnapshots();
+            AradPacketHandler.CHANNEL.sendToAll(
+                    new PacketStationRouteData(stations, routes));
+
             return null;
         }
     }

@@ -5,16 +5,17 @@ import jp.apple.arad.data.MapData;
 import jp.apple.arad.data.RouteSnapshot;
 import jp.apple.arad.data.StationSnapshot;
 import net.minecraft.client.Minecraft;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
-import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import cpw.mods.fml.common.network.simpleimpl.IMessage;
+import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
+import cpw.mods.fml.common.network.simpleimpl.MessageContext;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
+@SuppressWarnings("unused")
 public final class PacketStationRouteData implements IMessage {
 
     private List<StationSnapshot> stations;
@@ -100,10 +101,10 @@ public final class PacketStationRouteData implements IMessage {
         @Override
         @SideOnly(Side.CLIENT)
         public IMessage onMessage(PacketStationRouteData msg, MessageContext ctx) {
-            Minecraft.getMinecraft().addScheduledTask(() -> {
-                MapData.INSTANCE.onStationDataReceived(msg.stations);
-                MapData.INSTANCE.onRouteDataReceived(msg.routes);
-            });
+
+            MapData.INSTANCE.onStationDataReceived(msg.stations);
+            MapData.INSTANCE.onRouteDataReceived(msg.routes);
+
             return null;
         }
     }

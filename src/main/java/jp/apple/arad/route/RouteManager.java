@@ -1,16 +1,17 @@
 package jp.apple.arad.route;
 
-import jp.apple.arad.data.RouteSnapshot;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.world.World;
-import net.minecraft.world.storage.WorldSavedData;
+import net.minecraft.world.WorldSavedData;
 
 import java.util.*;
 
+import jp.apple.arad.data.RouteSnapshot;
+
 public final class RouteManager extends WorldSavedData {
 
-    public static final String DATA_NAME = "arad_routes";
+    public static final String DATA_NAME = "aradu_routes";
 
     private final Map<String, Route> routes = new LinkedHashMap<>();
 
@@ -19,10 +20,10 @@ public final class RouteManager extends WorldSavedData {
     }
 
     public static RouteManager get(World world) {
-        RouteManager mgr = (RouteManager) world.loadData(RouteManager.class, DATA_NAME);
+        RouteManager mgr = (RouteManager) world.mapStorage.loadData(RouteManager.class, DATA_NAME);
         if (mgr == null) {
             mgr = new RouteManager(DATA_NAME);
-            world.setData(DATA_NAME, mgr);
+            world.mapStorage.setData(DATA_NAME, mgr);
         }
         return mgr;
     }
@@ -62,7 +63,7 @@ public final class RouteManager extends WorldSavedData {
         r.trainCount = Math.max(0, count);
         markDirty();
     }
-    
+
     public void renameRoute(String routeId, String name) {
         Route r = routes.get(routeId);
         if (r == null)
@@ -97,11 +98,11 @@ public final class RouteManager extends WorldSavedData {
     }
 
     @Override
-    public NBTTagCompound writeToNBT(NBTTagCompound nbt) {
+    public void writeToNBT(NBTTagCompound nbt) {
         NBTTagList rl = new NBTTagList();
         for (Route r : routes.values())
             rl.appendTag(r.toNBT());
         nbt.setTag("routes", rl);
-        return nbt;
+
     }
 }

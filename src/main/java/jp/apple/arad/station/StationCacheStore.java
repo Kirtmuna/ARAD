@@ -1,19 +1,20 @@
 package jp.apple.arad.station;
 
-import jp.apple.arad.data.StationSnapshot;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.world.World;
-import net.minecraft.world.storage.WorldSavedData;
+import net.minecraft.world.WorldSavedData;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import jp.apple.arad.data.StationSnapshot;
+
 public final class StationCacheStore extends WorldSavedData {
 
-    public static final String DATA_NAME = "arad_station_cache";
+    public static final String DATA_NAME = "aradu_station_cache";
 
     private final Map<String, StationSnapshot> snapshotMap = new LinkedHashMap<>();
 
@@ -22,10 +23,10 @@ public final class StationCacheStore extends WorldSavedData {
     }
 
     public static StationCacheStore get(World world) {
-        StationCacheStore store = (StationCacheStore) world.loadData(StationCacheStore.class, DATA_NAME);
+        StationCacheStore store = (StationCacheStore) world.mapStorage.loadData(StationCacheStore.class, DATA_NAME);
         if (store == null) {
             store = new StationCacheStore(DATA_NAME);
-            world.setData(DATA_NAME, store);
+            world.mapStorage.setData(DATA_NAME, store);
         }
         return store;
     }
@@ -77,7 +78,7 @@ public final class StationCacheStore extends WorldSavedData {
     }
 
     @Override
-    public NBTTagCompound writeToNBT(NBTTagCompound nbt) {
+    public void writeToNBT(NBTTagCompound nbt) {
         NBTTagList list = new NBTTagList();
         for (StationSnapshot s : snapshotMap.values()) {
             NBTTagCompound tag = new NBTTagCompound();
@@ -94,6 +95,6 @@ public final class StationCacheStore extends WorldSavedData {
             list.appendTag(tag);
         }
         nbt.setTag("stations", list);
-        return nbt;
+
     }
 }

@@ -1,15 +1,17 @@
 package jp.apple.arad.gui;
 
-import jp.apple.arad.handler.AradPacketHandler;
-import jp.apple.arad.network.PacketSpeedLimitSignConfig;
 import net.minecraft.client.gui.GuiTextField;
 import net.minecraft.client.gui.inventory.GuiContainer;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.util.math.BlockPos;
+import org.lwjgl.opengl.GL11;
+
+import jp.apple.arad.handler.AradPacketHandler;
+import jp.apple.arad.network.PacketSpeedLimitSignConfig;
+
 import org.lwjgl.input.Keyboard;
 
 import java.io.IOException;
 
+@SuppressWarnings("unused")
 public class GuiSpeedLimitSign extends GuiContainer {
 
     private static final int GUI_W = 196;
@@ -19,15 +21,18 @@ public class GuiSpeedLimitSign extends GuiContainer {
     private static final int RS_TOGGLE_X = 8, RS_TOGGLE_Y = 68, RS_TOGGLE_W = 12, RS_TOGGLE_H = 12;
 
     private final ContainerSpeedLimitSign container;
-    private final BlockPos pos;
+    private final int x, y, z;
 
     private GuiTextField limitField;
     private GuiTextField offsetField;
 
-    public GuiSpeedLimitSign(ContainerSpeedLimitSign container, BlockPos pos) {
+    public GuiSpeedLimitSign(ContainerSpeedLimitSign container, int x, int y, int z) {
         super(container);
+        this.x = x;
+        this.y = y;
+        this.z = z;
         this.container = container;
-        this.pos = pos;
+
         this.xSize = GUI_W;
         this.ySize = GUI_H;
     }
@@ -37,13 +42,13 @@ public class GuiSpeedLimitSign extends GuiContainer {
         super.initGui();
         Keyboard.enableRepeatEvents(true);
 
-        limitField = new GuiTextField(0, fontRenderer, guiLeft + 100, guiTop + 20, 56, 16);
+        limitField = new GuiTextField(fontRendererObj, guiLeft + 100, guiTop + 20, 56, 16);
         limitField.setMaxStringLength(4);
         limitField.setText(String.valueOf(container.speedLimitSign.getSpeedLimitKmh()));
         limitField.setCanLoseFocus(true);
         limitField.setFocused(true);
 
-        offsetField = new GuiTextField(1, fontRenderer, guiLeft + 100, guiTop + 45, 56, 16);
+        offsetField = new GuiTextField(fontRendererObj, guiLeft + 100, guiTop + 45, 56, 16);
         offsetField.setMaxStringLength(5);
         offsetField.setText(String.valueOf(container.speedLimitSign.getStartOffsetBlocks()));
         offsetField.setCanLoseFocus(true);
@@ -70,7 +75,7 @@ public class GuiSpeedLimitSign extends GuiContainer {
 
         container.speedLimitSign.setConfig(newLimit, newOffset, newRs);
         AradPacketHandler.CHANNEL.sendToServer(
-                new PacketSpeedLimitSignConfig(pos, newLimit, newOffset, newRs));
+                new PacketSpeedLimitSignConfig(x, y, z, newLimit, newOffset, newRs));
     }
 
     private int parseLimit() {
@@ -92,7 +97,7 @@ public class GuiSpeedLimitSign extends GuiContainer {
     }
 
     @Override
-    protected void keyTyped(char typedChar, int keyCode) throws IOException {
+    protected void keyTyped(char typedChar, int keyCode) {
         if (limitField.isFocused()) {
             if (keyCode == Keyboard.KEY_RETURN || keyCode == Keyboard.KEY_NUMPADENTER) {
                 limitField.setFocused(false);
@@ -121,7 +126,7 @@ public class GuiSpeedLimitSign extends GuiContainer {
     }
 
     @Override
-    protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException {
+    protected void mouseClicked(int mouseX, int mouseY, int mouseButton) {
         super.mouseClicked(mouseX, mouseY, mouseButton);
         limitField.mouseClicked(mouseX, mouseY, mouseButton);
         offsetField.mouseClicked(mouseX, mouseY, mouseButton);
@@ -143,23 +148,23 @@ public class GuiSpeedLimitSign extends GuiContainer {
 
     @Override
     protected void drawGuiContainerBackgroundLayer(float partialTicks, int mouseX, int mouseY) {
-        GlStateManager.color(1f, 1f, 1f, 1f);
+        GL11.glColor4f(1f, 1f, 1f, 1f);
         drawRect(guiLeft, guiTop, guiLeft + xSize, guiTop + ySize, 0xFF1A2A55);
         drawRect(guiLeft + 1, guiTop + 1, guiLeft + xSize - 1, guiTop + ySize - 1, 0xFF0D1B3E);
 
-        fontRenderer.drawString("§f制限ブロック", guiLeft + 8, guiTop + 7, 0xFFFFFF);
+        fontRendererObj.drawString("§f制限ブロック", guiLeft + 8, guiTop + 7, 0xFFFFFF);
 
-        fontRenderer.drawString("§7制限速度:", guiLeft + 8, guiTop + 24, 0xCCDDFF);
-        fontRenderer.drawString("§7km/h", guiLeft + 160, guiTop + 24, 0xCCDDFF);
+        fontRendererObj.drawString("§7制限速度:", guiLeft + 8, guiTop + 24, 0xCCDDFF);
+        fontRendererObj.drawString("§7km/h", guiLeft + 160, guiTop + 24, 0xCCDDFF);
         drawRect(guiLeft + 99, guiTop + 19, guiLeft + 157, guiTop + 37, 0xFF000000);
         limitField.drawTextBox();
 
-        fontRenderer.drawString("§7開始地点:", guiLeft + 8, guiTop + 49, 0xCCDDFF);
-        fontRenderer.drawString("§7blocks", guiLeft + 160, guiTop + 49, 0xCCDDFF);
+        fontRendererObj.drawString("§7開始地点:", guiLeft + 8, guiTop + 49, 0xCCDDFF);
+        fontRendererObj.drawString("§7blocks", guiLeft + 160, guiTop + 49, 0xCCDDFF);
         drawRect(guiLeft + 99, guiTop + 44, guiLeft + 157, guiTop + 62, 0xFF000000);
         offsetField.drawTextBox();
 
-        fontRenderer.drawString("§7RS信号:", guiLeft + 8, guiTop + 70, 0xCCDDFF);
+        fontRendererObj.drawString("§7RS信号:", guiLeft + 8, guiTop + 70, 0xCCDDFF);
         int boxColor = requireRedstone ? 0xFF33CC33 : 0xFF444444;
         drawRect(guiLeft + RS_TOGGLE_X + 60, guiTop + RS_TOGGLE_Y, guiLeft + RS_TOGGLE_X + 60 + RS_TOGGLE_W,
                 guiTop + RS_TOGGLE_Y + RS_TOGGLE_H, boxColor);

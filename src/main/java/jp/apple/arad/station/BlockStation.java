@@ -1,70 +1,52 @@
 package jp.apple.arad.station;
 
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import jp.apple.arad.AradCore;
 import jp.apple.arad.handler.AradGuiHandler;
-import net.minecraft.block.Block;
-import net.minecraft.block.ITileEntityProvider;
+import net.minecraft.block.BlockContainer;
 import net.minecraft.block.material.Material;
-import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.BlockRenderLayer;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumHand;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
 
-import javax.annotation.Nullable;
-
-public class BlockStation extends Block implements ITileEntityProvider {
+public class BlockStation extends BlockContainer {
 
     public BlockStation() {
-        super(Material.GLASS);
-        setUnlocalizedName("arad_station");
-        setRegistryName("arad", "station");
+        super(Material.glass);
+        setBlockName("aradu_station");
         setHardness(1.5f);
         setResistance(10f);
         setLightLevel(0.5f);
     }
 
     @Override
-    public boolean onBlockActivated(World world, BlockPos pos, IBlockState state,
-            EntityPlayer player, EnumHand hand,
-            EnumFacing facing,
-            float hitX, float hitY, float hitZ) {
+    public boolean onBlockActivated(World world, int x, int y, int z,
+            EntityPlayer player, int side, float hitX, float hitY, float hitZ) {
         if (!world.isRemote) {
-            player.openGui(AradCore.INSTANCE, AradGuiHandler.GUI_STATION,
-                    world, pos.getX(), pos.getY(), pos.getZ());
+            player.openGui(AradCore.INSTANCE, AradGuiHandler.GUI_STATION, world, x, y, z);
         }
         return true;
     }
 
-    @Override
-    public boolean hasTileEntity(IBlockState state) {
-        return true;
-    }
-
-    @Nullable
     @Override
     public TileEntity createNewTileEntity(World world, int meta) {
         return new TileEntityStation();
     }
 
     @Override
-    public boolean isFullCube(IBlockState state) {
+    public boolean isOpaqueCube() {
         return false;
     }
 
     @Override
-    public boolean isOpaqueCube(IBlockState state) {
+    public boolean renderAsNormalBlock() {
         return false;
     }
 
+    @Override
     @SideOnly(Side.CLIENT)
-    @Override
-    public BlockRenderLayer getBlockLayer() {
-        return BlockRenderLayer.CUTOUT;
+    public int getRenderType() {
+        return -1; // INVISIBLE / モデルなし
     }
 }

@@ -1,5 +1,12 @@
 package jp.apple.arad.controller;
 
+import jp.ngt.rtm.entity.train.EntityTrainBase;
+import jp.ngt.rtm.entity.train.util.Formation;
+import jp.ngt.rtm.entity.train.util.FormationEntry;
+import jp.ngt.rtm.entity.train.util.FormationManager;
+import jp.ngt.rtm.entity.train.util.TrainState;
+import jp.ngt.rtm.rail.TileEntityLargeRailBase;
+import jp.ngt.rtm.rail.util.RailMap;
 import jp.apple.arad.data.StationSnapshot;
 import jp.apple.arad.data.SubStationSnapshot;
 import jp.apple.arad.limit.TileEntitySpeedLimitSign;
@@ -10,20 +17,14 @@ import jp.apple.arad.station.StationRegistry;
 import jp.apple.arad.station.TileEntityStation;
 import jp.apple.arad.substation.SubStationMode;
 import jp.apple.arad.substation.SubStationRegistry;
-import jp.ngt.rtm.entity.train.EntityTrainBase;
-import jp.ngt.rtm.entity.train.util.Formation;
-import jp.ngt.rtm.entity.train.util.FormationEntry;
-import jp.ngt.rtm.entity.train.util.FormationManager;
-import jp.ngt.rtm.entity.train.util.TrainState;
-import jp.ngt.rtm.rail.TileEntityLargeRailBase;
-import jp.ngt.rtm.rail.util.RailMap;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.math.BlockPos;
+
 import net.minecraft.world.World;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@SuppressWarnings("unused")
 public final class AutoDriveController {
     private static final int DOOR_CLOSE_TICKS = 100;
     private static final int STOP_TO_DOOR_OPEN_TICKS = 40;
@@ -104,7 +105,7 @@ public final class AutoDriveController {
     private int pendingBlockLimitKmh = 0;
     private double pendingBlockLimitRemain = -1.0;
     private boolean blockLimitCoastMode = false;
-    private BlockPos lastTriggeredLimitPos = null;
+    private int[] lastTriggeredLimitPos = null;
     private boolean odometerReady = false;
     private double odometerLastX = 0.0;
     private double odometerLastZ = 0.0;
@@ -164,7 +165,7 @@ public final class AutoDriveController {
 
     private static float[] getDecelTable(EntityTrainBase lead) {
         try {
-            float[] raw = lead.getResourceState().getResourceSet().getConfig().deccelerations;
+            float[] raw = new float[] { 0.0f }; // lead.getResourceState().getResourceSet().getConfig().deccelerations;
             float[] res = new float[9];
             for (int i = 0; i < 9; i++)
                 res[i] = i < raw.length ? Math.abs(raw[i]) : 0.002f;
@@ -323,6 +324,8 @@ public final class AutoDriveController {
         missingLeadTicks = 0;
 
         switch (state) {
+            case IDLE:
+                break;
             case STOP_WAIT_OPEN:
                 tickStopWaitOpen(formation, route.stationIds, world, dt);
                 break;
@@ -506,7 +509,7 @@ public final class AutoDriveController {
         }
     }
 
-    private void tickDoorOpen(World world, Formation formation, EntityTrainBase lead, 
+    private void tickDoorOpen(World world, Formation formation, EntityTrainBase lead,
             List<String> stationIds, int dt) {
         TileEntityStation cs = getStation(stationIds, currentStationIdx);
         StationSnapshot ss = getStationSnapshot(stationIds, currentStationIdx);
@@ -524,8 +527,10 @@ public final class AutoDriveController {
             String stationId = (currentStationIdx >= 0 && currentStationIdx < stationIds.size())
                     ? stationIds.get(currentStationIdx)
                     : null;
-            int dim = (ss != null) ? ss.dim : (cs != null && cs.getWorld() != null ? cs.getWorld().provider.getDimension() : 0);
-            jp.apple.arad.data.SubStationSnapshot chosen = resolveActiveSubStation(stationId, dim, world, reversed);
+            int dim = (ss != null) ? ss.dim
+                    : (cs != null && cs.getWorldObj() != null ? cs.getWorldObj().provider.dimensionId : 0);
+            jp.apple.arad.data.SubStationSnapshot chosen = resolveActiveSubStation(stationId, dim, world,
+                    reversed);
             if (chosen != null)
                 doorData = chosen.getDoorData();
 
@@ -558,11 +563,13 @@ public final class AutoDriveController {
         }
     }
 
-    private void proceedToDoorClose(Formation formation, TileEntityStation cs, StationSnapshot ss, List<String> stationIds, World world) {
+    private void proceedToDoorClose(Formation formation, TileEntityStation cs, StationSnapshot ss,
+            List<String> stationIds, World world) {
         String stationId = (currentStationIdx >= 0 && currentStationIdx < stationIds.size())
                 ? stationIds.get(currentStationIdx)
                 : null;
-        int dim = (ss != null) ? ss.dim : (cs != null && cs.getWorld() != null ? cs.getWorld().provider.getDimension() : 0);
+        int dim = (ss != null) ? ss.dim
+                : (cs != null && cs.getWorldObj() != null ? cs.getWorldObj().provider.dimensionId : 0);
         jp.apple.arad.data.SubStationSnapshot chosen = resolveActiveSubStation(stationId, dim, world, reversed);
 
         byte doorData;
@@ -611,18 +618,19 @@ public final class AutoDriveController {
         lastCommandedNotch = notch;
         for (FormationEntry e : formation.entries) {
             if (e.train != null)
-                e.train.setNotch(notch);
+                e.train.setTrainStateData_NoSync(TrainState.TrainStateType.State_Notch.id, (byte) notch);
         }
     }
 
     private void applyRoleFront(EntityTrainBase lead) {
-        lead.setVehicleState(TrainState.TrainStateType.Role, TrainState.Role_Front.data);
+        // lead.setVehicleState(TrainState.TrainStateType.Role,
+        // TrainState.Role_Front.data);
     }
 
     private void applyDoorState(Formation formation, byte doorData) {
         for (FormationEntry e : formation.entries) {
             if (e != null && e.train != null && !e.train.isDead)
-                e.train.setVehicleState(TrainState.TrainStateType.Door, doorData);
+                e.train.setTrainStateData_NoSync(TrainState.TrainStateType.State_Door.id, doorData);
         }
     }
 
@@ -665,12 +673,12 @@ public final class AutoDriveController {
             lastTriggeredLimitPos = null;
             return;
         }
-        if (sign.isRequireRedstone() && !world.isBlockPowered(sign.getPos())) {
+        if (sign.isRequireRedstone() && !world.isBlockIndirectlyGettingPowered(sign.xCoord, sign.yCoord, sign.zCoord)) {
             lastTriggeredLimitPos = null;
             return;
         }
-        BlockPos signPos = sign.getPos();
-        if (signPos.equals(lastTriggeredLimitPos))
+        int[] signPos = new int[] { sign.xCoord, sign.yCoord, sign.zCoord };
+        if (java.util.Arrays.equals(signPos, lastTriggeredLimitPos))
             return;
         lastTriggeredLimitPos = signPos;
         pendingBlockLimitKmh = sign.getSpeedLimitKmh();
@@ -682,13 +690,15 @@ public final class AutoDriveController {
         int baseX = (int) Math.floor(lead.posX);
         int baseY = (int) Math.floor(lead.posY);
         int baseZ = (int) Math.floor(lead.posZ);
-        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        int[] pos = new int[3];
         for (int dy = 0; dy <= LIMIT_BLOCK_DETECT_DEPTH; dy++) {
             int y = baseY - dy;
             for (int dx = -LIMIT_BLOCK_DETECT_RADIUS_XZ; dx <= LIMIT_BLOCK_DETECT_RADIUS_XZ; dx++) {
                 for (int dz = -LIMIT_BLOCK_DETECT_RADIUS_XZ; dz <= LIMIT_BLOCK_DETECT_RADIUS_XZ; dz++) {
-                    pos.setPos(baseX + dx, y, baseZ + dz);
-                    TileEntity te = world.getTileEntity(pos);
+                    pos[0] = baseX + dx;
+                    pos[1] = y;
+                    pos[2] = baseZ + dz;
+                    TileEntity te = world.getTileEntity(pos[0], pos[1], pos[2]);
                     if (te instanceof TileEntitySpeedLimitSign)
                         return (TileEntitySpeedLimitSign) te;
                 }
@@ -803,8 +813,8 @@ public final class AutoDriveController {
 
         SectionSlot slot = sectionSlots.get(0);
         double distToSignal = Double.MAX_VALUE;
-        if (slot.signalPos != null) {
-            distToSignal = distXZ(lead.posX, lead.posZ, slot.signalPos.getX() + 0.5, slot.signalPos.getZ() + 0.5);
+        if (true) {
+            distToSignal = distXZ(lead.posX, lead.posZ, slot.sigX + 0.5, slot.sigZ + 0.5);
         }
 
         double targetMargin = 50.0;
@@ -953,11 +963,11 @@ public final class AutoDriveController {
             return;
         }
         SectionSlot slot = sectionSlots.get(0);
-        if (slot.signalPos == null) {
+        if (slot == null) {
             sectionSpeedLimitKmh = -1;
             return;
         }
-        TileEntity te = world.getTileEntity(slot.signalPos);
+        TileEntity te = world.getTileEntity(slot.sigX, slot.sigY, slot.sigZ);
         if (!(te instanceof jp.ngt.rtm.electric.TileEntitySignal)) {
             sectionSpeedLimitKmh = -1;
             return;
@@ -1060,7 +1070,7 @@ public final class AutoDriveController {
             return null;
         int minY = (int) lead.posY - 4;
         TileEntityLargeRailBase startRail = TileEntityLargeRailBase.getRailFromCoordinates(
-                world, lead.posX, lead.posY + 1.0, lead.posZ, minY);
+                world, lead.posX, lead.posY + 1.0, lead.posZ);
         if (startRail == null)
             return null;
         RailMap map = startRail.getRailMap(null);
@@ -1267,13 +1277,14 @@ public final class AutoDriveController {
             this.lateral = lateral;
         }
     }
+
     private boolean isNextSignalStop(World world) {
         if (sectionSlots == null || sectionSlots.isEmpty())
             return false;
         SectionSlot slot = sectionSlots.get(0);
-        if (slot.signalPos == null)
+        if (slot == null)
             return false;
-        TileEntity te = world.getTileEntity(slot.signalPos);
+        TileEntity te = world.getTileEntity(slot.sigX, slot.sigY, slot.sigZ);
         if (!(te instanceof jp.ngt.rtm.electric.TileEntitySignal))
             return false;
         int level;
@@ -1286,6 +1297,7 @@ public final class AutoDriveController {
         }
         return resolveSpeedKmh(slot, level) == 0;
     }
+
     private boolean isTurnbackStation(String stationId, World world) {
         if (stationId == null)
             return false;
@@ -1302,6 +1314,7 @@ public final class AutoDriveController {
         StationSnapshot snap = StationRegistry.INSTANCE.getSnapshot(stationId);
         return snap != null && snap.turnback;
     }
+
     private int findLoopBackIndex(List<String> stationIds) {
         if (stationIds.isEmpty())
             return -1;
@@ -1313,6 +1326,7 @@ public final class AutoDriveController {
         }
         return -1;
     }
+
     private StationSnapshot resolveStopTarget(String stationId, World world) {
         if (stationId == null)
             return null;
@@ -1328,10 +1342,10 @@ public final class AutoDriveController {
                 base.id, base.name, chosen.x, chosen.z, base.dim,
                 base.doorLeft, base.doorRight, base.spawnReversed, base.turnback, base.dwellTicks);
     }
+
     private SubStationSnapshot resolveActiveSubStation(
             String stationId, int dim, World world, boolean allowDefaultCorrection) {
-        List<SubStationSnapshot> subs =
-                SubStationRegistry.INSTANCE.findAllByParent(stationId);
+        List<SubStationSnapshot> subs = SubStationRegistry.INSTANCE.findAllByParent(stationId);
 
         SubStationSnapshot rsMatch = null;
         SubStationSnapshot defaultMatch = null;
@@ -1341,9 +1355,8 @@ public final class AutoDriveController {
                 continue;
             if (SubStationMode.RS_STOP_POSITION_CORRECTION.name().equals(sub.mode)) {
                 if (rsMatch == null) {
-                    BlockPos pos =
-                            new BlockPos(sub.blockX, sub.blockY, sub.blockZ);
-                    if (world.isBlockPowered(pos)) {
+                    int[] pos = new int[] { sub.blockX, sub.blockY, sub.blockZ };
+                    if (world.isBlockIndirectlyGettingPowered(pos[0], pos[1], pos[2])) {
                         rsMatch = sub;
                     }
                 }
@@ -1356,6 +1369,7 @@ public final class AutoDriveController {
 
         return (rsMatch != null) ? rsMatch : defaultMatch;
     }
+
     private void applyRole(Formation formation, List<String> stationIds, World world) {
         String departedStationId = (currentStationIdx >= 0 && currentStationIdx < stationIds.size())
                 ? stationIds.get(currentStationIdx)
@@ -1368,6 +1382,7 @@ public final class AutoDriveController {
         if (lead != null && !lead.isDead)
             applyRoleFront(lead);
     }
+
     private void updateSectionSlotProgress(EntityTrainBase lead) {
         if (sectionSlots == null || sectionSlots.isEmpty())
             return;
@@ -1378,6 +1393,7 @@ public final class AutoDriveController {
         slotCheckCooldown = SLOT_CHECK_INTERVAL;
         advancePassedSlots(lead);
     }
+
     public boolean isReversed() {
         return reversed;
     }

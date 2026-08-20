@@ -1,24 +1,24 @@
 package jp.apple.arad.section;
 
-import jp.apple.arad.controller.AutoDriveController;
-import jp.apple.arad.controller.AutoDriveManager;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.network.NetworkManager;
-import net.minecraft.network.play.server.SPacketUpdateTileEntity;
+import net.minecraft.network.Packet;
+import net.minecraft.network.play.server.S35PacketUpdateTileEntity;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.ITickable;
-import net.minecraft.world.World;
 
 import java.util.*;
 
-public class TileEntitySectionMarker extends TileEntity implements ITickable {
+import jp.apple.arad.controller.AutoDriveController;
+import jp.apple.arad.controller.AutoDriveManager;
+
+public class TileEntitySectionMarker extends TileEntity {
 
     private static final double BLOCK_TRIGGER_RADIUS = 3.0;
 
-    private final List<SectionSlot> slots = new ArrayList<>();
+    private final List<SectionSlot> slots = new ArrayList<SectionSlot>();
 
-    private final Map<Long, Boolean> blockCapturedByFormation = new HashMap<>();
+    private final Map<Long, Boolean> blockCapturedByFormation = new HashMap<Long, Boolean>();
     private boolean requireRedstone = false;
 
     public List<SectionSlot> getSlots() {
@@ -31,8 +31,8 @@ public class TileEntitySectionMarker extends TileEntity implements ITickable {
             slots.add(s.copy());
         blockCapturedByFormation.clear();
         markDirty();
-        if (world != null && !world.isRemote) {
-            world.notifyBlockUpdate(pos, world.getBlockState(pos), world.getBlockState(pos), 3);
+        if (worldObj != null && !worldObj.isRemote) {
+            worldObj.markBlockForUpdate(xCoord, yCoord, zCoord);
         }
     }
 
@@ -57,29 +57,28 @@ public class TileEntitySectionMarker extends TileEntity implements ITickable {
     public void setRequireRedstone(boolean requireRedstone) {
         this.requireRedstone = requireRedstone;
         markDirty();
-        if (world != null && !world.isRemote) {
-            world.notifyBlockUpdate(pos, world.getBlockState(pos), world.getBlockState(pos), 3);
+        if (worldObj != null && !worldObj.isRemote) {
+            worldObj.markBlockForUpdate(xCoord, yCoord, zCoord);
         }
     }
 
     @Override
-    public void update() {
-        World world = getWorld();
-        if (world == null || world.isRemote)
+    public void updateEntity() {
+        if (worldObj == null || worldObj.isRemote)
             return;
         if (slots.isEmpty())
             return;
-        if (requireRedstone && !world.isBlockPowered(pos))
+        if (requireRedstone && !worldObj.isBlockIndirectlyGettingPowered(xCoord, yCoord, zCoord))
             return;
 
-        double blockCx = pos.getX() + 0.5;
-        double blockCz = pos.getZ() + 0.5;
+        double blockCx = xCoord + 0.5;
+        double blockCz = zCoord + 0.5;
         double triggerR2 = BLOCK_TRIGGER_RADIUS * BLOCK_TRIGGER_RADIUS;
 
         for (AutoDriveController ctrl : AutoDriveManager.INSTANCE.getAllControllers()) {
             long fid = ctrl.getFormationId();
-            double tx = ctrl.getLeadX(world);
-            double tz = ctrl.getLeadZ(world);
+            double tx = ctrl.getLeadX(worldObj);
+            double tz = ctrl.getLeadZ(worldObj);
             if (tx == Double.MIN_VALUE)
                 continue;
 
@@ -92,25 +91,30 @@ public class TileEntitySectionMarker extends TileEntity implements ITickable {
                 lastOnBlock = false;
 
             if (nowOnBlock && !lastOnBlock) {
-
-                ctrl.onSectionMarkerPassed(new ArrayList<>(slots));
+                ctrl.onSectionMarkerPassed(new ArrayList<SectionSlot>(slots));
             }
 
             blockCapturedByFormation.put(fid, nowOnBlock);
         }
 
-        blockCapturedByFormation.entrySet().removeIf(e -> AutoDriveManager.INSTANCE.getController(e.getKey()) == null);
+        // 廃止済みコントローラのエントリを削除
+        Iterator<Map.Entry<Long, Boolean>> it = blockCapturedByFormation.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<Long, Boolean> e = it.next();
+            if (AutoDriveManager.INSTANCE.getController(e.getKey()) == null) {
+                it.remove();
+            }
+        }
     }
 
     @Override
-    public NBTTagCompound writeToNBT(NBTTagCompound nbt) {
+    public void writeToNBT(NBTTagCompound nbt) {
         super.writeToNBT(nbt);
         NBTTagList list = new NBTTagList();
         for (SectionSlot s : slots)
             list.appendTag(s.toNBT());
         nbt.setTag("slots", list);
         nbt.setBoolean("RequireRedstone", requireRedstone);
-        return nbt;
     }
 
     @Override
@@ -129,17 +133,14 @@ public class TileEntitySectionMarker extends TileEntity implements ITickable {
     }
 
     @Override
-    public SPacketUpdateTileEntity getUpdatePacket() {
-        return new SPacketUpdateTileEntity(pos, 1, getUpdateTag());
+    public Packet getDescriptionPacket() {
+        NBTTagCompound nbt = new NBTTagCompound();
+        writeToNBT(nbt);
+        return new S35PacketUpdateTileEntity(xCoord, yCoord, zCoord, 1, nbt);
     }
 
     @Override
-    public NBTTagCompound getUpdateTag() {
-        return writeToNBT(new NBTTagCompound());
-    }
-
-    @Override
-    public void onDataPacket(NetworkManager net, SPacketUpdateTileEntity pkt) {
-        readFromNBT(pkt.getNbtCompound());
+    public void onDataPacket(NetworkManager net, S35PacketUpdateTileEntity pkt) {
+        readFromNBT(pkt.func_148857_g());
     }
 }

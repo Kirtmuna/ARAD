@@ -4,28 +4,32 @@ import io.netty.buffer.ByteBuf;
 import jp.apple.arad.section.SectionSlot;
 import jp.apple.arad.section.TileEntitySectionMarker;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.client.Minecraft;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.math.BlockPos;
+
 import net.minecraft.world.WorldServer;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
-import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
+import cpw.mods.fml.common.network.simpleimpl.IMessage;
+import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
+import cpw.mods.fml.common.network.simpleimpl.MessageContext;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
+@SuppressWarnings("unused")
 public final class PacketSectionMarkerConfig implements IMessage {
 
-    private BlockPos markerPos;
+    private int x, y, z;
     private List<SectionSlot> slots;
     private boolean requireRedstone;
 
     public PacketSectionMarkerConfig() {
     }
 
-    public PacketSectionMarkerConfig(BlockPos markerPos, List<SectionSlot> slots, boolean requireRedstone) {
-        this.markerPos = markerPos;
+    public PacketSectionMarkerConfig(int x, int y, int z, List<SectionSlot> slots, boolean requireRedstone) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
         this.slots = new ArrayList<>(slots);
         this.requireRedstone = requireRedstone;
     }
@@ -46,12 +50,16 @@ public final class PacketSectionMarkerConfig implements IMessage {
 
     @Override
     public void toBytes(ByteBuf buf) {
-        buf.writeLong(markerPos.toLong());
+        buf.writeInt(x);
+        buf.writeInt(y);
+        buf.writeInt(z);
         buf.writeBoolean(requireRedstone);
         buf.writeShort(slots.size());
         for (SectionSlot s : slots) {
             writeStr(buf, s.name);
-            buf.writeLong(s.signalPos.toLong());
+            buf.writeInt(s.sigX);
+            buf.writeInt(s.sigY);
+            buf.writeInt(s.sigZ);
             buf.writeInt(s.passX);
             buf.writeInt(s.passZ);
         }
@@ -59,33 +67,36 @@ public final class PacketSectionMarkerConfig implements IMessage {
 
     @Override
     public void fromBytes(ByteBuf buf) {
-        markerPos = BlockPos.fromLong(buf.readLong());
+        x = buf.readInt();
+        y = buf.readInt();
+        z = buf.readInt();
         requireRedstone = buf.readBoolean();
         int count = buf.readShort() & 0xFFFF;
         slots = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
             String name = readStr(buf);
-            BlockPos sPos = BlockPos.fromLong(buf.readLong());
+            int sX = buf.readInt();
+            int sY = buf.readInt();
+            int sZ = buf.readInt();
             int passX = buf.readInt();
             int passZ = buf.readInt();
-            slots.add(new SectionSlot(name, sPos, passX, passZ));
+            slots.add(new SectionSlot(name, sX, sY, sZ, passX, passZ));
         }
     }
 
     public static final class Handler implements IMessageHandler<PacketSectionMarkerConfig, IMessage> {
         @Override
         public IMessage onMessage(PacketSectionMarkerConfig msg, MessageContext ctx) {
-            EntityPlayerMP player = ctx.getServerHandler().player;
-            WorldServer world = player.getServerWorld();
+            EntityPlayerMP player = ctx.getServerHandler().playerEntity;
+            WorldServer world = (net.minecraft.world.WorldServer) player.worldObj;
 
-            world.addScheduledTask(() -> {
-                TileEntity te = world.getTileEntity(msg.markerPos);
-                if (!(te instanceof TileEntitySectionMarker))
-                    return;
-                TileEntitySectionMarker marker = (TileEntitySectionMarker) te;
-                marker.setRequireRedstone(msg.requireRedstone);
-                marker.setSlots(msg.slots);
-            });
+            TileEntity te = world.getTileEntity(msg.x, msg.y, msg.z);
+            if (!(te instanceof TileEntitySectionMarker))
+                return null;
+            TileEntitySectionMarker marker = (TileEntitySectionMarker) te;
+            marker.setRequireRedstone(msg.requireRedstone);
+            marker.setSlots(msg.slots);
+
             return null;
         }
     }

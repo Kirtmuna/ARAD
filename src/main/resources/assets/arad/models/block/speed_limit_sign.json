@@ -1,6 +1,6 @@
 {
   "parent": "block/cube_all",
   "textures": {
-    "all": "arad:blocks/limit"
+    "all": "aradu:blocks/limit"
   }
 }

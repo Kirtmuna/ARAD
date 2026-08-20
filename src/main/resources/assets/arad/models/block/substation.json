@@ -1,6 +1,6 @@
 {
   "parent": "block/cube_all",
   "textures": {
-    "all": "arad:blocks/substation"
+    "all": "aradu:blocks/substation"
   }
 }

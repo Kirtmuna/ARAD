@@ -5,16 +5,17 @@ import jp.apple.arad.data.FormationSnapshot;
 import jp.apple.arad.data.MapData;
 import jp.apple.arad.data.PlayerSnapshot;
 import net.minecraft.client.Minecraft;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
-import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import cpw.mods.fml.common.network.simpleimpl.IMessage;
+import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
+import cpw.mods.fml.common.network.simpleimpl.MessageContext;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
+@SuppressWarnings("unused")
 public final class PacketFormationData implements IMessage {
 
     private List<FormationSnapshot> formations;
@@ -97,10 +98,10 @@ public final class PacketFormationData implements IMessage {
         @Override
         @SideOnly(Side.CLIENT)
         public IMessage onMessage(PacketFormationData msg, MessageContext ctx) {
-            Minecraft.getMinecraft().addScheduledTask(() -> {
-                MapData.INSTANCE.onFormationDataReceived(msg.formations);
-                MapData.INSTANCE.onPlayerDataReceived(msg.players);
-            });
+
+            MapData.INSTANCE.onFormationDataReceived(msg.formations);
+            MapData.INSTANCE.onPlayerDataReceived(msg.players);
+
             return null;
         }
     }

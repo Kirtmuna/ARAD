@@ -1,5 +1,11 @@
 package jp.apple.arad.data;
 
+import jp.ngt.rtm.entity.train.EntityTrainBase;
+import jp.ngt.rtm.entity.train.util.Formation;
+import jp.ngt.rtm.entity.train.util.FormationEntry;
+import jp.ngt.rtm.entity.train.util.FormationManager;
+import jp.ngt.rtm.rail.TileEntityLargeRailCore;
+import jp.ngt.rtm.rail.util.RailMap;
 import jp.apple.arad.cache.CachedRail;
 import jp.apple.arad.cache.RailCacheManager;
 import jp.apple.arad.handler.AradPacketHandler;
@@ -8,18 +14,12 @@ import jp.apple.arad.network.PacketRailData;
 import jp.apple.arad.network.PacketStationRouteData;
 import jp.apple.arad.route.RouteManager;
 import jp.apple.arad.station.StationRegistry;
-import jp.ngt.rtm.entity.train.EntityTrainBase;
-import jp.ngt.rtm.entity.train.util.Formation;
-import jp.ngt.rtm.entity.train.util.FormationEntry;
-import jp.ngt.rtm.entity.train.util.FormationManager;
-import jp.ngt.rtm.rail.TileEntityLargeRailCore;
-import jp.ngt.rtm.rail.util.RailMap;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.math.BlockPos;
+
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
-import net.minecraftforge.fml.common.FMLCommonHandler;
+import cpw.mods.fml.common.FMLCommonHandler;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,8 +46,8 @@ public final class ServerData {
         if (world.isRemote)
             return;
 
-        int dim = world.provider.getDimension();
-        String key = RailCacheManager.makeChunkKey(dim, chunk.x, chunk.z);
+        int dim = world.provider.dimensionId;
+        String key = RailCacheManager.makeChunkKey(dim, chunk.xPosition, chunk.zPosition);
 
         List<CachedRail> segs = extractFromChunk(chunk);
 
@@ -58,16 +58,16 @@ public final class ServerData {
         if (world.isRemote)
             return;
 
-        int dim = world.provider.getDimension();
+        int dim = world.provider.dimensionId;
         int centerCx = player.chunkCoordX;
         int centerCz = player.chunkCoordZ;
         int viewDist = FMLCommonHandler.instance().getMinecraftServerInstance()
-                .getPlayerList().getViewDistance();
+                .getConfigurationManager().getViewDistance();
         int scanRadius = Math.max(2, viewDist + 1);
 
         for (int cx = centerCx - scanRadius; cx <= centerCx + scanRadius; cx++) {
             for (int cz = centerCz - scanRadius; cz <= centerCz + scanRadius; cz++) {
-                Chunk chunk = world.getChunkProvider().getLoadedChunk(cx, cz);
+                Chunk chunk = world.getChunkProvider().provideChunk(cx, cz);
                 if (chunk == null)
                     continue;
                 String key = RailCacheManager.makeChunkKey(dim, cx, cz);
@@ -96,7 +96,8 @@ public final class ServerData {
 
     private List<CachedRail> extractFromChunk(Chunk chunk) {
         List<CachedRail> result = new ArrayList<>();
-        for (TileEntity te : chunk.getTileEntityMap().values()) {
+        for (Object obj : chunk.chunkTileEntityMap.values()) {
+            TileEntity te = (TileEntity) obj;
             if (te instanceof TileEntityLargeRailCore) {
                 result.addAll(extractFromCore((TileEntityLargeRailCore) te));
             }
@@ -110,7 +111,7 @@ public final class ServerData {
         if (maps == null)
             return result;
 
-        BlockPos corePos = core.getPos();
+        int[] corePos = new int[] { core.xCoord, core.yCoord, core.zCoord } /* BlockPos */;
 
         for (RailMap rm : maps) {
             if (rm == null)
@@ -123,7 +124,7 @@ public final class ServerData {
                 x[i] = (float) pos[1];
                 z[i] = (float) pos[0];
             }
-            result.add(new CachedRail(x, z, corePos.getX(), corePos.getY(), corePos.getZ()));
+            result.add(new CachedRail(x, z, corePos[0], corePos[1], corePos[2]));
         }
         return result;
     }
@@ -183,17 +184,17 @@ public final class ServerData {
     public List<PlayerSnapshot> collectPlayerSnapshots() {
         List<PlayerSnapshot> result = new ArrayList<>();
         try {
+            @SuppressWarnings("unchecked")
             List<EntityPlayerMP> players = FMLCommonHandler.instance()
                     .getMinecraftServerInstance()
-                    .getPlayerList()
-                    .getPlayers();
+                    .getConfigurationManager().playerEntityList;
 
             for (EntityPlayerMP p : players) {
                 result.add(new PlayerSnapshot(
                         (float) p.posX,
                         (float) p.posZ,
                         p.rotationYaw,
-                        p.getName()));
+                        p.getCommandSenderName()));
             }
         } catch (Exception ignored) {
         }

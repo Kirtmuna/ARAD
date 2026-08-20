@@ -1,15 +1,16 @@
 package jp.apple.arad.gui;
 
+import net.minecraft.client.gui.GuiButton;
+import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.client.gui.GuiTextField;
+
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import jp.apple.arad.handler.AradPacketHandler;
 import jp.apple.arad.network.PacketSectionMarkerConfig;
 import jp.apple.arad.section.SectionSlot;
 import jp.apple.arad.section.TileEntitySectionMarker;
-import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.client.gui.GuiTextField;
-import net.minecraft.util.math.BlockPos;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 
@@ -19,6 +20,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+@SuppressWarnings("unused")
 @SideOnly(Side.CLIENT)
 public class GuiSectionMarker extends GuiScreen {
 
@@ -59,7 +61,7 @@ public class GuiSectionMarker extends GuiScreen {
     private static final int VBW = 18;
 
     private final TileEntitySectionMarker te;
-    private final BlockPos pos;
+    private final int x, y, z;
     private final List<SectionSlot> editSlots = new ArrayList<>();
     private int selectedSlot = -1;
     private int slotScroll = 0;
@@ -71,9 +73,12 @@ public class GuiSectionMarker extends GuiScreen {
 
     private int gx, gy;
 
-    public GuiSectionMarker(TileEntitySectionMarker te, BlockPos pos) {
+    public GuiSectionMarker(TileEntitySectionMarker te, int x, int y, int z) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
         this.te = te;
-        this.pos = pos;
+
         this.requireRedstone = te.isRequireRedstone();
         for (SectionSlot s : te.getSlots())
             editSlots.add(s.copy());
@@ -84,7 +89,7 @@ public class GuiSectionMarker extends GuiScreen {
         gx = (width - GUI_W) / 2;
         gy = (height - GUI_H) / 2;
 
-        if (selectedSlot < 0 && !editSlots.isEmpty()) {
+        if (selectedSlot < 0 && editSlots != null) {
             selectedSlot = 0;
         }
         ensureSelectedVisible();
@@ -93,13 +98,15 @@ public class GuiSectionMarker extends GuiScreen {
         buildDetailFields();
         rebuildButtons();
     }
-    
+
+    @SuppressWarnings("unchecked")
     private void rebuildButtons() {
         buttonList.clear();
 
         int fy = gy + GUI_H - FOOTER_H + 4;
         buttonList.add(new GuiButton(BTN_ADD, gx + 6, fy, 100, 20, "＋ スロット追加"));
-        buttonList.add(new GuiButton(BTN_RS_TOGGLE, gx + 112, fy, 90, 20, requireRedstone ? "§aRS式: ON" : "§7RS式: OFF"));
+        buttonList
+                .add(new GuiButton(BTN_RS_TOGGLE, gx + 112, fy, 90, 20, requireRedstone ? "§aRS式: ON" : "§7RS式: OFF"));
         buttonList.add(new GuiButton(BTN_SAVE, gx + GUI_W - 200, fy, 94, 20, "保存"));
         buttonList.add(new GuiButton(BTN_CANCEL, gx + GUI_W - 100, fy, 94, 20, "キャンセル"));
 
@@ -112,11 +119,11 @@ public class GuiSectionMarker extends GuiScreen {
 
         if (selectedSlot >= 0 && selectedSlot < editSlots.size()
                 && fieldSigZ != null && fieldPassZ != null) {
-            int sigVx = fieldSigZ.x + FW + FG;
-            int row1Y = fieldSigZ.y;
+            int sigVx = fieldSigZ.xPosition + FW + FG;
+            int row1Y = fieldSigZ.yPosition;
             buttonList.add(new GuiButton(BTN_PASTE_SIG, sigVx, row1Y - 1, VBW, 16, "V"));
-            int pasVx = fieldPassZ.x + FW + FG;
-            int row2Y = fieldPassZ.y;
+            int pasVx = fieldPassZ.xPosition + FW + FG;
+            int row2Y = fieldPassZ.yPosition;
             buttonList.add(new GuiButton(BTN_PASTE_PASS, pasVx, row2Y - 1, VBW, 16, "V"));
         }
     }
@@ -148,7 +155,7 @@ public class GuiSectionMarker extends GuiScreen {
     }
 
     private GuiTextField tf(int x, int y, int w, String def) {
-        GuiTextField f = new GuiTextField(0, fontRenderer, x, y, w, 14);
+        GuiTextField f = new GuiTextField(fontRendererObj, x, y, w, 14);
         f.setMaxStringLength(10);
         f.setText(def);
         f.setCanLoseFocus(true);
@@ -171,14 +178,14 @@ public class GuiSectionMarker extends GuiScreen {
         drawRect(gx, gy + GUI_H - 1, gx + GUI_W, gy + GUI_H, C_BORDER);
         drawRect(gx, gy, gx + 1, gy + GUI_H, C_BORDER);
         drawRect(gx + GUI_W - 1, gy, gx + GUI_W, gy + GUI_H, C_BORDER);
-        drawString(fontRenderer, "§l閉塞設定", gx + 8, gy + 6, C_WHITE);
+        drawString(fontRendererObj, "§l閉塞設定", gx + 8, gy + 6, C_WHITE);
 
         drawRect(gx + LEFT_W, gy + 16, gx + LEFT_W + 1, gy + GUI_H - FOOTER_H, C_BORDER);
 
         drawRect(gx + 1, gy + GUI_H - FOOTER_H, gx + GUI_W - 1, gy + GUI_H - FOOTER_H + 1, C_BORDER);
 
         drawRect(gx + 1, gy + 16, gx + LEFT_W, gy + 22, C_PANEL);
-        drawString(fontRenderer, "§7スロット", gx + 6, gy + 14, C_DIM);
+        drawString(fontRendererObj, "§7スロット", gx + 6, gy + 14, C_DIM);
     }
 
     private void drawLeftPane() {
@@ -192,21 +199,21 @@ public class GuiSectionMarker extends GuiScreen {
                 drawRect(gx + 1, ry, gx + LEFT_W, ry + ROW_H, C_SEL_BG);
                 drawRect(gx + 1, ry, gx + 3, ry + ROW_H, C_ACCENT);
             }
-            String label = (s.name != null && !s.name.isEmpty())
+            String label = (s.name != null && s.name != null)
                     ? String.format("%d. %s", idx + 1, s.name)
                     : String.format("%d. (%d,%d)", idx + 1, s.passX, s.passZ);
-            label = fontRenderer.trimStringToWidth(label, LEFT_W - 30);
-            drawString(fontRenderer, label, gx + 6, ry + 4, sel ? C_YELLOW : C_TEXT);
+            label = fontRendererObj.trimStringToWidth(label, LEFT_W - 30);
+            drawString(fontRendererObj, label, gx + 6, ry + 4, sel ? C_YELLOW : C_TEXT);
         }
-        if (editSlots.isEmpty()) {
-            drawString(fontRenderer, "§7（スロットなし）", gx + 6, gy + LIST_TOP + 4, C_DIM);
+        if (editSlots == null) {
+            drawString(fontRendererObj, "§7（スロットなし）", gx + 6, gy + LIST_TOP + 4, C_DIM);
         }
         if (editSlots.size() > MAX_ROWS) {
             int from = slotScroll + 1;
             int to = slotScroll + visibleRows;
             String page = "§7" + from + "-" + to + "/" + editSlots.size();
             int py = gy + LIST_TOP + MAX_ROWS * ROW_H + 3;
-            drawString(fontRenderer, page, gx + 6, py, C_DIM);
+            drawString(fontRendererObj, page, gx + 6, py, C_DIM);
         }
     }
 
@@ -214,7 +221,7 @@ public class GuiSectionMarker extends GuiScreen {
         int rx = gx + RIGHT_X + 8;
 
         if (selectedSlot < 0 || selectedSlot >= editSlots.size()) {
-            drawCenteredString(fontRenderer, "§7スロットを選択してください",
+            drawCenteredString(fontRendererObj, "§7スロットを選択してください",
                     gx + RIGHT_X + RIGHT_W / 2, gy + GUI_H / 2 - 10, C_DIM);
             return;
         }
@@ -223,41 +230,41 @@ public class GuiSectionMarker extends GuiScreen {
         int row1Y = row0Y + DLH + 2;
         int row2Y = row1Y + DLH + 2;
 
-        drawString(fontRenderer, "§l詳細設定  §7スロット " + (selectedSlot + 1),
+        drawString(fontRendererObj, "§l詳細設定  §7スロット " + (selectedSlot + 1),
                 rx, gy + 22, C_ACCENT);
 
-        drawString(fontRenderer, "名前", rx, row0Y + 1, C_TEXT);
+        drawString(fontRendererObj, "名前", rx, row0Y + 1, C_TEXT);
         if (fieldName != null)
             drawFieldBg(fieldName);
 
-        drawString(fontRenderer, "信号座標", rx, row1Y + 1, C_TEXT);
+        drawString(fontRendererObj, "信号座標", rx, row1Y + 1, C_TEXT);
         if (fieldSigX != null) {
-            drawString(fontRenderer, "X:", fieldSigX.x - AX_W, row1Y + 1, C_DIM);
+            drawString(fontRendererObj, "X:", fieldSigX.xPosition - AX_W, row1Y + 1, C_DIM);
             drawFieldBg(fieldSigX);
         }
         if (fieldSigY != null) {
-            drawString(fontRenderer, "Y:", fieldSigY.x - AX_W, row1Y + 1, C_DIM);
+            drawString(fontRendererObj, "Y:", fieldSigY.xPosition - AX_W, row1Y + 1, C_DIM);
             drawFieldBg(fieldSigY);
         }
         if (fieldSigZ != null) {
-            drawString(fontRenderer, "Z:", fieldSigZ.x - AX_W, row1Y + 1, C_DIM);
+            drawString(fontRendererObj, "Z:", fieldSigZ.xPosition - AX_W, row1Y + 1, C_DIM);
             drawFieldBg(fieldSigZ);
         }
 
-        drawString(fontRenderer, "通過座標", rx, row2Y + 1, C_TEXT);
+        drawString(fontRendererObj, "通過座標", rx, row2Y + 1, C_TEXT);
         if (fieldPassX != null) {
-            drawString(fontRenderer, "X:", fieldPassX.x - AX_W, row2Y + 1, C_DIM);
+            drawString(fontRendererObj, "X:", fieldPassX.xPosition - AX_W, row2Y + 1, C_DIM);
             drawFieldBg(fieldPassX);
         }
         if (fieldPassZ != null) {
-            drawString(fontRenderer, "Z:", fieldPassZ.x - AX_W, row2Y + 1, C_DIM);
+            drawString(fontRendererObj, "Z:", fieldPassZ.xPosition - AX_W, row2Y + 1, C_DIM);
             drawFieldBg(fieldPassZ);
         }
     }
 
     private void drawFieldBg(GuiTextField f) {
-        drawRect(f.x - 1, f.y - 1, f.x + f.width + 1, f.y + f.height + 1, C_BORDER);
-        drawRect(f.x, f.y, f.x + f.width, f.y + f.height, C_FIELD_BG);
+        drawRect(f.xPosition - 1, f.yPosition - 1, f.xPosition + f.width + 1, f.yPosition + f.height + 1, C_BORDER);
+        drawRect(f.xPosition, f.yPosition, f.xPosition + f.width, f.yPosition + f.height, C_FIELD_BG);
     }
 
     private void drawFields() {
@@ -278,7 +285,7 @@ public class GuiSectionMarker extends GuiScreen {
     }
 
     @Override
-    protected void actionPerformed(GuiButton btn) throws IOException {
+    protected void actionPerformed(GuiButton btn) {
         int id = btn.id;
 
         if (id == BTN_ADD) {
@@ -290,7 +297,7 @@ public class GuiSectionMarker extends GuiScreen {
         } else if (id == BTN_SAVE) {
             flushFields();
             AradPacketHandler.CHANNEL.sendToServer(
-                    new PacketSectionMarkerConfig(pos, editSlots, requireRedstone));
+                    new PacketSectionMarkerConfig(x, y, z, editSlots, requireRedstone));
             mc.displayGuiScreen(null);
 
         } else if (id == BTN_CANCEL) {
@@ -372,7 +379,7 @@ public class GuiSectionMarker extends GuiScreen {
     }
 
     @Override
-    protected void mouseClicked(int mx, int my, int btn) throws IOException {
+    protected void mouseClicked(int mx, int my, int btn) {
 
         fwdMouse(mx, my, btn);
 
@@ -394,7 +401,7 @@ public class GuiSectionMarker extends GuiScreen {
     }
 
     @Override
-    public void handleMouseInput() throws IOException {
+    public void handleMouseInput() {
         super.handleMouseInput();
         int scroll = Mouse.getEventDWheel();
         if (scroll == 0)
@@ -430,7 +437,7 @@ public class GuiSectionMarker extends GuiScreen {
     }
 
     @Override
-    protected void keyTyped(char ch, int key) throws IOException {
+    protected void keyTyped(char ch, int key) {
         if (key == Keyboard.KEY_ESCAPE) {
             mc.displayGuiScreen(null);
             return;
@@ -468,11 +475,11 @@ public class GuiSectionMarker extends GuiScreen {
         if (fieldName != null)
             fieldName.setText(s.name != null ? s.name : "");
         if (fieldSigX != null)
-            fieldSigX.setText(String.valueOf(s.signalPos.getX()));
+            fieldSigX.setText(String.valueOf(s.sigX));
         if (fieldSigY != null)
-            fieldSigY.setText(String.valueOf(s.signalPos.getY()));
+            fieldSigY.setText(String.valueOf(s.sigY));
         if (fieldSigZ != null)
-            fieldSigZ.setText(String.valueOf(s.signalPos.getZ()));
+            fieldSigZ.setText(String.valueOf(s.sigZ));
         if (fieldPassX != null)
             fieldPassX.setText(String.valueOf(s.passX));
         if (fieldPassZ != null)
@@ -485,10 +492,12 @@ public class GuiSectionMarker extends GuiScreen {
         SectionSlot s = editSlots.get(selectedSlot);
         if (fieldName != null)
             s.name = fieldName.getText();
-        int sx = pi(fieldSigX, s.signalPos.getX());
-        int sy = pi(fieldSigY, s.signalPos.getY());
-        int sz = pi(fieldSigZ, s.signalPos.getZ());
-        s.signalPos = new BlockPos(sx, sy, sz);
+        int sx = pi(fieldSigX, s.sigX);
+        int sy = pi(fieldSigY, s.sigY);
+        int sz = pi(fieldSigZ, s.sigZ);
+        s.sigX = sx;
+        s.sigY = sy;
+        s.sigZ = sz;
         s.passX = pi(fieldPassX, s.passX);
         s.passZ = pi(fieldPassZ, s.passZ);
     }

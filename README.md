@@ -1,8 +1,10 @@
-# ARAD
+# ARAD(1.7.10)
 
 [English](README.en.md) | [日本語](README.md)
 
-[Minecraft](https://www.minecraft.net/ja-jp) | [forge1.12.2](https://files.minecraftforge.net/net/minecraftforge/forge/index_1.12.2.html)
+[Minecraft](https://www.minecraft.net/ja-jp) | [forge1.7.10](https://files.minecraftforge.net/net/minecraftforge/forge/index_1.7.10.html)
+
+# このブランチはすずみやによる1.7.10移植版です。本家版(1.12.2)は当リポジトリのmainブランチにあります。
 
 # 最新版のダウンロードは[こちら](https://github.com/ringo-1234/ARAD/releases/latest) から
 
@@ -13,7 +15,11 @@ ARAD は RealTrainMod(RTM),NGTLib,MCTE の非公式拡張物です。
 ## 注意事項
 
 **当 Mod の使用による一切の責任を負いません。**
-**AppleExtended-2.4.2以降のバージョンが必須です。**
+**KaizPatchX-1.10.1以降のバージョンが必須です。**
+**本家RTMでも動作する可能性がありますが、互換性は検証されていません。**
+
+**[PR] CrossTie-1.0.0-Alpha11以降のバージョンがあると、より良いパフォーマンスと経験が得られます。**
+[CrossTieのDLはこちら](https://github.com/suzumiyatrainer/CrossTie)
 
 ## 導入方法
 

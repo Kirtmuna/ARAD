@@ -1,16 +1,18 @@
 package jp.apple.arad.gui;
 
-import jp.apple.arad.handler.AradPacketHandler;
-import jp.apple.arad.network.PacketStationConfig;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiTextField;
 import net.minecraft.client.gui.inventory.GuiContainer;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.util.math.BlockPos;
+import org.lwjgl.opengl.GL11;
+
+import jp.apple.arad.handler.AradPacketHandler;
+import jp.apple.arad.network.PacketStationConfig;
+
 import org.lwjgl.input.Keyboard;
 
 import java.io.IOException;
 
+@SuppressWarnings("unused")
 public class GuiStation extends GuiContainer {
 
     private static final int GUI_W = 176;
@@ -22,7 +24,7 @@ public class GuiStation extends GuiContainer {
     private static final int BTN_TURNBACK = 13;
 
     private final ContainerStation container;
-    private final BlockPos pos;
+    private final int x, y, z;
 
     private GuiTextField nameField;
     private GuiTextField dwellField;
@@ -37,10 +39,13 @@ public class GuiStation extends GuiContainer {
     private GuiButton btnSpawnReverse;
     private GuiButton btnTurnback;
 
-    public GuiStation(ContainerStation container, BlockPos pos) {
+    public GuiStation(ContainerStation container, int x, int y, int z) {
         super(container);
+        this.x = x;
+        this.y = y;
+        this.z = z;
         this.container = container;
-        this.pos = pos;
+
         this.xSize = GUI_W;
         this.ySize = GUI_H;
 
@@ -51,19 +56,20 @@ public class GuiStation extends GuiContainer {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public void initGui() {
         super.initGui();
         Keyboard.enableRepeatEvents(true);
 
         int fx = guiLeft + 8;
-        nameField = new GuiTextField(0, fontRenderer, fx, guiTop + 6, GUI_W - 16, 16);
+        nameField = new GuiTextField(fontRendererObj, fx, guiTop + 6, GUI_W - 16, 16);
         nameField.setMaxStringLength(32);
         nameField.setText(container.station.getStationName());
         nameField.setFocused(true);
         nameField.setCanLoseFocus(true);
 
         int dwellSec = container.station.getDwellTimeTicks() / 20;
-        dwellField = new GuiTextField(1, fontRenderer, guiLeft + 80, guiTop + 66, 40, 16);
+        dwellField = new GuiTextField(fontRendererObj, guiLeft + 80, guiTop + 66, 40, 16);
         dwellField.setMaxStringLength(4);
         dwellField.setText(String.valueOf(dwellSec));
         dwellField.setCanLoseFocus(true);
@@ -93,7 +99,7 @@ public class GuiStation extends GuiContainer {
 
     private void sendConfigIfChanged() {
         String newName = nameField.getText().trim();
-        if (newName.isEmpty())
+        if (newName == null)
             newName = "駅";
 
         int dwellSec = parseDwellSec();
@@ -114,7 +120,7 @@ public class GuiStation extends GuiContainer {
             container.station.setTurnback(turnback);
             container.station.setDwellTimeTicks(newTicks);
             AradPacketHandler.CHANNEL.sendToServer(
-                    new PacketStationConfig(pos, newName, doorLeft, doorRight, spawnReversed, turnback, newTicks));
+                    new PacketStationConfig(x, y, z, newName, doorLeft, doorRight, spawnReversed, turnback, newTicks));
         }
     }
 
@@ -128,7 +134,7 @@ public class GuiStation extends GuiContainer {
     }
 
     @Override
-    protected void actionPerformed(GuiButton button) throws IOException {
+    protected void actionPerformed(GuiButton button) {
         if (button.id == BTN_DOOR_LEFT) {
             doorLeft = !doorLeft;
             btnDoorLeft.displayString = doorLeft ? "§a◀ 左ドア" : "§7◀ 左ドア";
@@ -145,7 +151,7 @@ public class GuiStation extends GuiContainer {
     }
 
     @Override
-    protected void keyTyped(char ch, int keyCode) throws IOException {
+    protected void keyTyped(char ch, int keyCode) {
         if (nameField.isFocused()) {
             if (keyCode == Keyboard.KEY_RETURN || keyCode == Keyboard.KEY_NUMPADENTER) {
                 nameField.setFocused(false);
@@ -172,7 +178,7 @@ public class GuiStation extends GuiContainer {
     }
 
     @Override
-    protected void mouseClicked(int mx, int my, int btn) throws IOException {
+    protected void mouseClicked(int mx, int my, int btn) {
         super.mouseClicked(mx, my, btn);
         nameField.mouseClicked(mx, my, btn);
         dwellField.mouseClicked(mx, my, btn);
@@ -187,7 +193,7 @@ public class GuiStation extends GuiContainer {
 
     @Override
     protected void drawGuiContainerBackgroundLayer(float partial, int mx, int my) {
-        GlStateManager.color(1f, 1f, 1f, 1f);
+        GL11.glColor4f(1f, 1f, 1f, 1f);
 
         drawRect(guiLeft, guiTop, guiLeft + xSize, guiTop + ySize, 0xFF1A2A55);
         drawRect(guiLeft + 1, guiTop + 1, guiLeft + xSize - 1, guiTop + ySize - 1, 0xFF0D1B3E);
@@ -195,14 +201,14 @@ public class GuiStation extends GuiContainer {
         drawRect(guiLeft + 7, guiTop + 5, guiLeft + xSize - 7, guiTop + 23, 0xFF000000);
         nameField.drawTextBox();
 
-        fontRenderer.drawString("§7ドア向き:", guiLeft + 8, guiTop + 26, 0xCCDDFF);
+        fontRendererObj.drawString("§7ドア向き:", guiLeft + 8, guiTop + 26, 0xCCDDFF);
 
-        fontRenderer.drawString("§7停車時間:", guiLeft + 8, guiTop + 70, 0xCCDDFF);
-        fontRenderer.drawString("§7秒", guiLeft + 123, guiTop + 70, 0xCCDDFF);
+        fontRendererObj.drawString("§7停車時間:", guiLeft + 8, guiTop + 70, 0xCCDDFF);
+        fontRendererObj.drawString("§7秒", guiLeft + 123, guiTop + 70, 0xCCDDFF);
         drawRect(guiLeft + 79, guiTop + 66, guiLeft + 121, guiTop + 84, 0xFF000000);
         dwellField.drawTextBox();
 
-        fontRenderer.drawString("§7編成:", guiLeft + 70, guiTop + 84, 0xCCDDFF);
+        fontRendererObj.drawString("§7編成:", guiLeft + 70, guiTop + 84, 0xCCDDFF);
         int startX = guiLeft + 100;
         int sy = guiTop + 93;
         for (int i = 0; i < 3; i++) {
@@ -212,7 +218,7 @@ public class GuiStation extends GuiContainer {
         }
 
         drawHorizontalLine(guiLeft + 8, guiLeft + xSize - 8, guiTop + 112, 0xFF2A3F70);
-        fontRenderer.drawString("§7インベントリ", guiLeft + 8, guiTop + 115, 0x8899CC);
+        fontRendererObj.drawString("§7インベントリ", guiLeft + 8, guiTop + 115, 0x8899CC);
     }
 
     @Override

@@ -1,20 +1,21 @@
 package jp.apple.arad.gui;
 
+// import jp.apple.gui.GuiAppleListSelector;
+import net.minecraft.client.gui.GuiButton;
+import net.minecraft.client.gui.inventory.GuiContainer;
+import org.lwjgl.opengl.GL11;
+
 import jp.apple.arad.data.StationSnapshot;
 import jp.apple.arad.handler.AradPacketHandler;
 import jp.apple.arad.network.PacketSubStationConfig;
 import jp.apple.arad.substation.SubStationMode;
-import jp.apple.gui.GuiAppleListSelector;
-import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.gui.inventory.GuiContainer;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.util.math.BlockPos;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@SuppressWarnings("unused")
 public class GuiSubStation extends GuiContainer {
 
     private static final int GUI_W = 196;
@@ -27,7 +28,7 @@ public class GuiSubStation extends GuiContainer {
     private static final int BTN_DOOR_RIGHT = 21;
 
     private final ContainerSubStation container;
-    private final BlockPos pos;
+    private final int x, y, z;
 
     private String selectedParentId;
     private String selectedParentName = "(未選択)";
@@ -44,10 +45,13 @@ public class GuiSubStation extends GuiContainer {
     private GuiButton btnDoorLeft;
     private GuiButton btnDoorRight;
 
-    public GuiSubStation(ContainerSubStation container, BlockPos pos) {
+    public GuiSubStation(ContainerSubStation container, int x, int y, int z) {
         super(container);
+        this.x = x;
+        this.y = y;
+        this.z = z;
         this.container = container;
-        this.pos = pos;
+
         this.xSize = GUI_W;
         this.ySize = GUI_H;
 
@@ -67,7 +71,7 @@ public class GuiSubStation extends GuiContainer {
     }
 
     private void resolveParentName() {
-        if (selectedParentId == null || selectedParentId.isEmpty()) {
+        if (selectedParentId == null || selectedParentId == null) {
             selectedParentName = "(未選択)";
             return;
         }
@@ -80,6 +84,7 @@ public class GuiSubStation extends GuiContainer {
         selectedParentName = "(不明な駅)";
     }
 
+    @SuppressWarnings("unchecked")
     private void rebuildButtons() {
         buttonList.clear();
 
@@ -94,7 +99,7 @@ public class GuiSubStation extends GuiContainer {
         btnTurnback = new GuiButton(BTN_TURNBACK, guiLeft + 8, guiTop + 74,
                 GUI_W - 16, 18, turnback ? "§a折り返し" : "§7折り返し");
         buttonList.add(btnTurnback);
-        
+
         btnDoorLeft = new GuiButton(BTN_DOOR_LEFT, guiLeft + 8, guiTop + 98, (GUI_W - 20) / 2, 18,
                 doorLeft ? "§a◀ 左ドア" : "§7◀ 左ドア");
         buttonList.add(btnDoorLeft);
@@ -125,11 +130,11 @@ public class GuiSubStation extends GuiContainer {
         container.subStation.setDoorLeft(doorLeft);
         container.subStation.setDoorRight(doorRight);
         AradPacketHandler.CHANNEL.sendToServer(
-                new PacketSubStationConfig(pos, selectedParentId, selectedMode, turnback, doorLeft, doorRight));
+                new PacketSubStationConfig(x, y, z, selectedParentId, selectedMode, turnback, doorLeft, doorRight));
     }
 
     @Override
-    protected void actionPerformed(GuiButton button) throws IOException {
+    protected void actionPerformed(GuiButton button) {
         int id = button.id;
         if (id == BTN_PARENT_DROPDOWN) {
             openParentSelector();
@@ -160,27 +165,28 @@ public class GuiSubStation extends GuiContainer {
         }
         final int initialIndex = currentIndex;
 
-        GuiAppleListSelector selector = new GuiAppleListSelector(
-                this,
-                btnParentDropdown.x, btnParentDropdown.y + btnParentDropdown.height,
-                btnParentDropdown.width, 80,
-                () -> initialIndex,
-                names,
-                (selectedIdx) -> {
-                    selectedParentId = stationOptions.get(selectedIdx).id;
-                    resolveParentName();
-                    rebuildButtons();
-                });
-        this.mc.displayGuiScreen(selector);
+        // GuiAppleListSelector selector = new GuiAppleListSelector(
+        // this,
+        // // btnParentDropdown.xPosition, btnParentDropdown.yPosition +
+        // btnParentDropdown.height,
+        // btnParentDropdown.width, 80,
+        // () -> initialIndex,
+        // names,
+        // (selectedIdx) -> {
+        // selectedParentId = stationOptions.get(selectedIdx).id;
+        // resolveParentName();
+        // rebuildButtons();
+        // });
+        // this.mc.displayGuiScreen(selector);
     }
 
     @Override
     protected void drawGuiContainerBackgroundLayer(float partialTicks, int mouseX, int mouseY) {
-        GlStateManager.color(1f, 1f, 1f, 1f);
+        GL11.glColor4f(1f, 1f, 1f, 1f);
         drawRect(guiLeft, guiTop, guiLeft + xSize, guiTop + ySize, 0xFF1A2A55);
         drawRect(guiLeft + 1, guiTop + 1, guiLeft + xSize - 1, guiTop + ySize - 1, 0xFF0D1B3E);
 
-        fontRenderer.drawString("§fサブ駅設定", guiLeft + 8, guiTop + 7, 0xFFFFFF);
+        fontRendererObj.drawString("§fサブ駅設定", guiLeft + 8, guiTop + 7, 0xFFFFFF);
     }
 
     @Override

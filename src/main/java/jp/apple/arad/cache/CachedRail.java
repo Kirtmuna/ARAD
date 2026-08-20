@@ -37,7 +37,7 @@ public final class CachedRail {
     private static float[] fromNBTList(NBTTagList list) {
         float[] arr = new float[list.tagCount()];
         for (int i = 0; i < arr.length; i++)
-            arr[i] = list.getFloatAt(i);
+            arr[i] = list.func_150308_e(i);
         return arr;
     }
 

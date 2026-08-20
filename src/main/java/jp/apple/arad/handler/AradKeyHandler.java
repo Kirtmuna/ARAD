@@ -1,13 +1,14 @@
 package jp.apple.arad.handler;
 
-import jp.apple.arad.gui.GuiRailMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.settings.KeyBinding;
-import net.minecraftforge.fml.client.registry.ClientRegistry;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.common.gameevent.InputEvent;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import cpw.mods.fml.client.registry.ClientRegistry;
+import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+import cpw.mods.fml.common.gameevent.InputEvent;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
+import jp.apple.arad.gui.GuiRailMap;
+
 import org.lwjgl.input.Keyboard;
 
 @SideOnly(Side.CLIENT)
@@ -28,7 +29,7 @@ public class AradKeyHandler {
             return;
 
         Minecraft mc = Minecraft.getMinecraft();
-        if (mc.currentScreen == null && mc.world != null) {
+        if (mc.currentScreen == null && mc.theWorld != null) {
             mc.displayGuiScreen(new GuiRailMap());
         }
     }
