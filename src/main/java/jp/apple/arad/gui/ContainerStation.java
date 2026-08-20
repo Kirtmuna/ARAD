@@ -54,8 +54,8 @@ public class ContainerStation extends Container {
 
     @Override
     public ItemStack transferStackInSlot(EntityPlayer player, int index) {
-        ItemStack result = ItemStack.EMPTY;
-        Slot slot = inventorySlots.get(index);
+        ItemStack result = null;
+        Slot slot = (Slot) inventorySlots.get(index);
         if (slot == null || !slot.getHasStack())
             return result;
 
@@ -64,26 +64,32 @@ public class ContainerStation extends Container {
 
         if (index < 3) {
             if (!mergeItemStack(stack, 3, inventorySlots.size(), true))
-                return ItemStack.EMPTY;
+                return null;
         } else {
             if (station.isItemValidForSlot(0, stack)) {
                 boolean moved = false;
                 for (int i = 0; i < 3 && !moved; i++) {
-                    if (!inventorySlots.get(i).getHasStack()) {
+                    if (inventorySlots.get(i) != null
+                            && ((net.minecraft.inventory.Slot) inventorySlots.get(i)).getHasStack()) {
                         moved = mergeItemStack(stack, i, i + 1, false);
                     }
                 }
                 if (!moved)
-                    return ItemStack.EMPTY;
+                    return null;
             } else {
-                return ItemStack.EMPTY;
+                return null;
             }
         }
 
-        if (stack.isEmpty())
-            slot.putStack(ItemStack.EMPTY);
+        if (stack.stackSize == 0)
+            slot.putStack(null);
         else
             slot.onSlotChanged();
+
+        if (stack.stackSize == result.stackSize)
+            return null;
+
+        slot.onPickupFromSlot(player, stack);
 
         return result;
     }

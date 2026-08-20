@@ -20,6 +20,6 @@ public class ContainerSubStation extends Container {
 
     @Override
     public ItemStack transferStackInSlot(EntityPlayer player, int index) {
-        return ItemStack.EMPTY;
+        return null;
     }
 }

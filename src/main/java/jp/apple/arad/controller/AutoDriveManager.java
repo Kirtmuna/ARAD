@@ -1,26 +1,26 @@
 package jp.apple.arad.controller;
 
+import jp.ngt.rtm.entity.train.util.Formation;
+import jp.ngt.rtm.entity.train.util.FormationEntry;
+import jp.ngt.rtm.entity.train.util.FormationManager;
+import jp.ngt.rtm.rail.BlockLargeRailBase;
+import jp.ngt.rtm.rail.TileEntityLargeRailBase;
 import jp.apple.arad.data.StationSnapshot;
 import jp.apple.arad.route.Route;
 import jp.apple.arad.route.RouteManager;
 import jp.apple.arad.spawn.FormationSpawner;
 import jp.apple.arad.station.StationRegistry;
 import jp.apple.arad.station.TileEntityStation;
-import jp.ngt.rtm.entity.train.util.Formation;
-import jp.ngt.rtm.entity.train.util.FormationEntry;
-import jp.ngt.rtm.entity.train.util.FormationManager;
-import jp.ngt.rtm.rail.BlockLargeRailBase;
-import jp.ngt.rtm.rail.TileEntityLargeRailBase;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
-import net.minecraft.util.math.BlockPos;
 
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+@SuppressWarnings("unused")
 public final class AutoDriveManager {
 
     public static final AutoDriveManager INSTANCE = new AutoDriveManager();
@@ -37,6 +37,7 @@ public final class AutoDriveManager {
 
     private AutoDriveManager() {
     }
+
     @Deprecated
     private static boolean isAnyFormationWithin(double sx, double sz, double maxDist) {
         double maxDistSq = maxDist * maxDist;
@@ -100,12 +101,12 @@ public final class AutoDriveManager {
         if (firstStation == null)
             return;
 
-        double sx = firstStation.getPos().getX() + 0.5;
-        double sz = firstStation.getPos().getZ() + 0.5;
+        double sx = firstStation.xCoord + 0.5;
+        double sz = firstStation.zCoord + 0.5;
 
         if (sched.activeCount == 0) {
 
-            if (!isRailOccupied(world, firstStation.getPos())) {
+            if (!isRailOccupied(world, new int[] { firstStation.xCoord, firstStation.yCoord, firstStation.zCoord })) {
                 spawnFormation(world, routeId, route, sched, sx, sz);
             }
             return;
@@ -114,7 +115,7 @@ public final class AutoDriveManager {
         if (!isLastSpawnedFarEnough(sched, sx, sz))
             return;
 
-        if (isRailOccupied(world, firstStation.getPos()))
+        if (isRailOccupied(world, new int[] { firstStation.xCoord, firstStation.yCoord, firstStation.zCoord }))
             return;
 
         spawnFormation(world, routeId, route, sched, sx, sz);
@@ -150,7 +151,7 @@ public final class AutoDriveManager {
             return;
 
         ItemStack item = firstStation.getFormationItem();
-        if (item.isEmpty())
+        if (item == null)
             return;
 
         long formationId = FormationSpawner.spawnAt(world, firstStation, secondStation, item);
@@ -213,16 +214,17 @@ public final class AutoDriveManager {
             return loaded;
 
         StationSnapshot snap = StationRegistry.INSTANCE.getSnapshot(stationId);
-        if (snap == null || snap.dim != world.provider.getDimension())
+        if (snap == null || snap.dim != world.provider.dimensionId)
             return null;
 
         int cx = ((int) Math.floor(snap.x)) >> 4;
         int cz = ((int) Math.floor(snap.z)) >> 4;
-        Chunk chunk = world.getChunkProvider().getLoadedChunk(cx, cz);
+        Chunk chunk = world.getChunkProvider().provideChunk(cx, cz);
         if (chunk == null)
             return null;
 
-        for (TileEntity te : chunk.getTileEntityMap().values()) {
+        for (Object obj : chunk.chunkTileEntityMap.values()) {
+            TileEntity te = (TileEntity) obj;
             if (!(te instanceof TileEntityStation))
                 continue;
             TileEntityStation station = (TileEntityStation) te;
@@ -303,6 +305,7 @@ public final class AutoDriveManager {
             this.activeCount = 0;
         }
     }
+
     public void spawnOneExtra(World world, String routeId) {
         Route route = RouteManager.get(world).getRoute(routeId);
         if (route == null || route.stationIds.size() < 2)
@@ -318,19 +321,20 @@ public final class AutoDriveManager {
         if (firstStation == null)
             return;
 
-        double sx = firstStation.getPos().getX() + 0.5;
-        double sz = firstStation.getPos().getZ() + 0.5;
+        double sx = firstStation.xCoord + 0.5;
+        double sz = firstStation.zCoord + 0.5;
 
-        if (isRailOccupied(world, firstStation.getPos()))
+        if (isRailOccupied(world, new int[] { firstStation.xCoord, firstStation.yCoord, firstStation.zCoord }))
             return;
 
         spawnFormation(world, routeId, route, sched, sx, sz);
     }
-    private static boolean isRailOccupied(World world, BlockPos stationPos) {
-        BlockPos railPos = stationPos.up();
-        if (!(world.getBlockState(railPos).getBlock() instanceof BlockLargeRailBase))
+
+    private static boolean isRailOccupied(World world, int[] stationPos) {
+        int[] railPos = new int[] { stationPos[0], stationPos[1] + 1, stationPos[2] };
+        if (!(world.getBlock(railPos[0], railPos[1], railPos[2]) instanceof BlockLargeRailBase))
             return false;
-        TileEntity te = world.getTileEntity(railPos);
+        TileEntity te = world.getTileEntity(railPos[0], railPos[1], railPos[2]);
         if (te instanceof TileEntityLargeRailBase) {
             return ((TileEntityLargeRailBase) te).isTrainOnRail();
         }

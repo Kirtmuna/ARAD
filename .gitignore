@@ -27,5 +27,6 @@ forge*changelog.txt
 .gitattributes
 # macOS system files
 .DS_Store
-# Applepie
-libs/
+# WorkSpace
+.original/
+*.code-workspace

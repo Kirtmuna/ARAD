@@ -1,6 +1,6 @@
 ==== COPYRIGHT NOTICE ====
 
-(c) Applepie and other authors 2026
+(c) Applepie,SuzumiyaTrainer and other authors 2026
 
 ==== GNU LESSER GENERAL PUBLIC LICENSE ====
 GNU LESSER GENERAL PUBLIC LICENSE

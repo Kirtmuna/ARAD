@@ -1,5 +1,7 @@
 {
   "variants": {
-    "normal": { "model": "arad:station" }
+    "normal": {
+      "model": "arad:station"
+    }
   }
 }

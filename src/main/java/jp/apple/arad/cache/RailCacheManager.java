@@ -1,6 +1,5 @@
 package jp.apple.arad.cache;
 
-import jp.apple.arad.AradCore;
 import net.minecraft.nbt.CompressedStreamTools;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
@@ -8,6 +7,8 @@ import net.minecraft.nbt.NBTTagList;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+
+import jp.apple.arad.AradCore;
 
 public final class RailCacheManager {
 

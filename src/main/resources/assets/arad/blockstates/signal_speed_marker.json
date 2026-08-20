@@ -1,5 +1,7 @@
 {
   "variants": {
-    "normal": { "model": "arad:signal_speed_marker" }
+    "normal": {
+      "model": "arad:signal_speed_marker"
+    }
   }
 }

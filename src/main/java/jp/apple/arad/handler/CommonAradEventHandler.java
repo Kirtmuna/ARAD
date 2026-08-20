@@ -1,5 +1,8 @@
 package jp.apple.arad.handler;
 
+import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+import cpw.mods.fml.common.gameevent.PlayerEvent;
+import cpw.mods.fml.common.gameevent.TickEvent;
 import jp.apple.arad.cache.CachedRail;
 import jp.apple.arad.cache.RailCacheManager;
 import jp.apple.arad.controller.AutoDriveManager;
@@ -20,16 +23,12 @@ import jp.apple.arad.substation.TileEntitySubStation;
 import net.minecraft.block.Block;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldServer;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraftforge.event.world.BlockEvent;
 import net.minecraftforge.event.world.ChunkEvent;
 import net.minecraftforge.event.world.WorldEvent;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.common.gameevent.PlayerEvent;
-import net.minecraftforge.fml.common.gameevent.TickEvent;
 
 import java.util.List;
 
@@ -45,29 +44,29 @@ public final class CommonAradEventHandler {
     private static boolean isRailRelatedBlock(Block block) {
         if (block instanceof jp.ngt.rtm.rail.BlockLargeRailBase)
             return true;
-        ResourceLocation key = block.getRegistryName();
-        if (key == null)
+        // 1.7.10 does not have getRegistryName() reliably, check unlocalized name
+        if (block == null)
             return false;
-        String path = key.getResourcePath();
-        return path.contains("rail") || path.contains("marker");
+        String name = block.getUnlocalizedName();
+        return name != null && (name.contains("rail") || name.contains("marker"));
     }
 
     private static boolean isPrimaryServerWorld(World world) {
         return world != null
                 && !world.isRemote
                 && world.provider != null
-                && world.provider.getDimension() == 0;
+                && world.provider.dimensionId == 0;
     }
 
     @SubscribeEvent
     public void onChunkLoad(ChunkEvent.Load event) {
-        World world = event.getWorld();
+        World world = event.world;
         if (world.isRemote)
             return;
         if (world instanceof WorldServer) {
             WorldServer ws = (WorldServer) world;
             Chunk chunk = event.getChunk();
-            ws.addScheduledTask(() -> ServerData.INSTANCE.onChunkLoad(chunk, ws));
+            ServerData.INSTANCE.onChunkLoad(chunk, ws);
         }
     }
 
@@ -83,7 +82,7 @@ public final class CommonAradEventHandler {
 
     @SubscribeEvent
     public void onWorldLoad(WorldEvent.Load event) {
-        World world = event.getWorld();
+        World world = event.world;
         if (!isPrimaryServerWorld(world))
             return;
         StationRegistry.INSTANCE.loadFromWorld(world);
@@ -92,7 +91,7 @@ public final class CommonAradEventHandler {
 
     @SubscribeEvent
     public void onWorldUnload(WorldEvent.Unload event) {
-        if (!isPrimaryServerWorld(event.getWorld()))
+        if (!isPrimaryServerWorld(event.world))
             return;
         StationRegistry.INSTANCE.clearLoaded();
     }
@@ -102,32 +101,32 @@ public final class CommonAradEventHandler {
         if (!(event.player instanceof EntityPlayerMP))
             return;
         EntityPlayerMP player = (EntityPlayerMP) event.player;
-        ServerData.INSTANCE.onPlayerLogin(player, player.world);
+        ServerData.INSTANCE.onPlayerLogin(player, player.worldObj);
     }
 
     @SubscribeEvent
     public void onBlockPlace(BlockEvent.PlaceEvent event) {
-        World world = event.getWorld();
+        World world = event.world;
         if (world.isRemote || !(world instanceof WorldServer))
             return;
-        Block placed = event.getPlacedBlock().getBlock();
+        Block placed = event.placedBlock;
         if (!isRailRelatedBlock(placed))
             return;
 
         WorldServer ws = (WorldServer) world;
-        int dim = world.provider.getDimension();
-        int cx = event.getPos().getX() >> 4;
-        int cz = event.getPos().getZ() >> 4;
-        ws.addScheduledTask(() -> refreshRailChunk(ws, dim, cx, cz));
+        int dim = world.provider.dimensionId;
+        int cx = event.x >> 4;
+        int cz = event.z >> 4;
+        refreshRailChunk(ws, dim, cx, cz);
     }
 
     @SubscribeEvent
     public void onBlockBreak(BlockEvent.BreakEvent event) {
-        World world = event.getWorld();
+        World world = event.world;
         if (world.isRemote || !(world instanceof WorldServer))
             return;
 
-        Block broken = event.getState().getBlock();
+        Block broken = event.block;
         boolean isRailBlock = isRailRelatedBlock(broken);
         boolean isStationBlock = broken instanceof BlockStation;
         boolean isSubStationBlock = broken instanceof BlockSubStation;
@@ -137,21 +136,21 @@ public final class CommonAradEventHandler {
         WorldServer ws = (WorldServer) world;
 
         if (isStationBlock) {
-            TileEntity te = world.getTileEntity(event.getPos());
+            TileEntity te = world.getTileEntity(event.x, event.y, event.z);
             if (te instanceof TileEntityStation) {
                 StationRegistry.INSTANCE.removeFromCache(world, ((TileEntityStation) te).getStationId());
                 StationRegistry.INSTANCE.removeFromCacheByPos(
                         world,
-                        world.provider.getDimension(),
-                        event.getPos().getX(),
-                        event.getPos().getZ());
+                        world.provider.dimensionId,
+                        event.x,
+                        event.z);
             }
             List<StationSnapshot> stations = StationRegistry.INSTANCE.toSnapshots();
             List<RouteSnapshot> routes = RouteManager.get(world).toSnapshots();
             AradPacketHandler.CHANNEL.sendToAll(new PacketStationRouteData(stations, routes));
         }
         if (isSubStationBlock) {
-            TileEntity te = world.getTileEntity(event.getPos());
+            TileEntity te = world.getTileEntity(event.x, event.y, event.z);
             if (te instanceof TileEntitySubStation) {
                 SubStationRegistry.INSTANCE.removeFromCache(
                         world, ((TileEntitySubStation) te).getSubStationId());
@@ -163,9 +162,9 @@ public final class CommonAradEventHandler {
         if (!isRailBlock)
             return;
 
-        int dim = world.provider.getDimension();
-        int cx = event.getPos().getX() >> 4;
-        int cz = event.getPos().getZ() >> 4;
-        ws.addScheduledTask(() -> refreshRailChunk(ws, dim, cx, cz));
+        int dim = world.provider.dimensionId;
+        int cx = event.x >> 4;
+        int cz = event.z >> 4;
+        refreshRailChunk(ws, dim, cx, cz);
     }
 }

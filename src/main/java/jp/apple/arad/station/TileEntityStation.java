@@ -6,24 +6,24 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.network.NetworkManager;
-import net.minecraft.network.play.server.SPacketUpdateTileEntity;
+import net.minecraft.network.Packet;
+import net.minecraft.network.play.server.S35PacketUpdateTileEntity;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.ITickable;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TextComponentString;
 
 import java.util.Arrays;
 import java.util.UUID;
 
-public class TileEntityStation extends TileEntity implements ITickable, IInventory {
+//import jp.apple.arad.item.ItemArtpeTrain;
+import jp.apple.item.ItemArtpeTrain;
+
+public class TileEntityStation extends TileEntity implements IInventory {
 
     private String stationId = UUID.randomUUID().toString();
     private String stationName = "新しい駅";
     private boolean registered = false;
 
     private static final int FORMATION_SLOT_COUNT = 3;
-    private final ItemStack[] formationItems = new ItemStack[]{
-            ItemStack.EMPTY, ItemStack.EMPTY, ItemStack.EMPTY};
+    private final ItemStack[] formationItems = new ItemStack[FORMATION_SLOT_COUNT];
     private int nextFormationSlot = 0;
 
     private boolean doorLeft = true;
@@ -31,6 +31,10 @@ public class TileEntityStation extends TileEntity implements ITickable, IInvento
     private boolean spawnReversed = false;
     private boolean turnback = false;
     private int dwellTimeTicks = 400;
+
+    public TileEntityStation() {
+        Arrays.fill(formationItems, null);
+    }
 
     public String getStationId() {
         return stationId;
@@ -75,7 +79,7 @@ public class TileEntityStation extends TileEntity implements ITickable, IInvento
         markDirty();
         registered = false;
     }
-    
+
     public boolean isTurnback() {
         return turnback;
     }
@@ -105,20 +109,21 @@ public class TileEntityStation extends TileEntity implements ITickable, IInvento
         return 0;
     }
 
+    /** 次の有効な編成アイテムを返す（ラウンドロビン） */
     public ItemStack getFormationItem() {
         for (int i = 0; i < FORMATION_SLOT_COUNT; i++) {
             int idx = (nextFormationSlot + i) % FORMATION_SLOT_COUNT;
-            if (!formationItems[idx].isEmpty()) {
+            if (formationItems[idx] != null) {
                 nextFormationSlot = (idx + 1) % FORMATION_SLOT_COUNT;
                 return formationItems[idx];
             }
         }
-        return ItemStack.EMPTY;
+        return null;
     }
 
     @Override
-    public void update() {
-        if (world == null || world.isRemote)
+    public void updateEntity() {
+        if (worldObj == null || worldObj.isRemote)
             return;
         if (!registered) {
             StationRegistry.INSTANCE.register(this);
@@ -129,33 +134,30 @@ public class TileEntityStation extends TileEntity implements ITickable, IInvento
     @Override
     public void invalidate() {
         super.invalidate();
-        if (world != null && !world.isRemote)
+        if (worldObj != null && !worldObj.isRemote)
             StationRegistry.INSTANCE.unregister(stationId);
     }
 
     @Override
     public void onChunkUnload() {
-        if (world != null && !world.isRemote)
+        if (worldObj != null && !worldObj.isRemote)
             StationRegistry.INSTANCE.unregister(stationId);
     }
 
     @Override
-    public SPacketUpdateTileEntity getUpdatePacket() {
-        return new SPacketUpdateTileEntity(this.pos, 1, this.getUpdateTag());
+    public Packet getDescriptionPacket() {
+        NBTTagCompound nbt = new NBTTagCompound();
+        writeToNBT(nbt);
+        return new S35PacketUpdateTileEntity(xCoord, yCoord, zCoord, 1, nbt);
     }
 
     @Override
-    public NBTTagCompound getUpdateTag() {
-        return this.writeToNBT(new NBTTagCompound());
+    public void onDataPacket(NetworkManager net, S35PacketUpdateTileEntity pkt) {
+        readFromNBT(pkt.func_148857_g());
     }
 
     @Override
-    public void onDataPacket(NetworkManager net, SPacketUpdateTileEntity pkt) {
-        this.readFromNBT(pkt.getNbtCompound());
-    }
-
-    @Override
-    public NBTTagCompound writeToNBT(NBTTagCompound nbt) {
+    public void writeToNBT(NBTTagCompound nbt) {
         super.writeToNBT(nbt);
         nbt.setString("StationId", stationId);
         nbt.setString("StationName", stationName);
@@ -169,12 +171,11 @@ public class TileEntityStation extends TileEntity implements ITickable, IInvento
         for (int i = 0; i < FORMATION_SLOT_COUNT; i++) {
             NBTTagCompound itemTag = new NBTTagCompound();
             itemTag.setInteger("Slot", i);
-            if (!formationItems[i].isEmpty())
+            if (formationItems[i] != null)
                 formationItems[i].writeToNBT(itemTag);
             itemList.appendTag(itemTag);
         }
         nbt.setTag("FormationItems", itemList);
-        return nbt;
     }
 
     @Override
@@ -197,54 +198,49 @@ public class TileEntityStation extends TileEntity implements ITickable, IInvento
         if (nbt.hasKey("NextFormationSlot"))
             nextFormationSlot = nbt.getInteger("NextFormationSlot") % FORMATION_SLOT_COUNT;
 
-        java.util.Arrays.fill(formationItems, ItemStack.EMPTY);
+        Arrays.fill(formationItems, null);
         if (nbt.hasKey("FormationItems")) {
             NBTTagList itemList = nbt.getTagList("FormationItems", 10);
             for (int i = 0; i < itemList.tagCount(); i++) {
                 NBTTagCompound itemTag = itemList.getCompoundTagAt(i);
                 int slot = itemTag.getInteger("Slot");
                 if (slot >= 0 && slot < FORMATION_SLOT_COUNT)
-                    formationItems[slot] = new ItemStack(itemTag);
+                    formationItems[slot] = ItemStack.loadItemStackFromNBT(itemTag);
             }
         } else if (nbt.hasKey("FormationItem")) {
-            formationItems[0] = new ItemStack(nbt.getCompoundTag("FormationItem"));
+            formationItems[0] = ItemStack.loadItemStackFromNBT(nbt.getCompoundTag("FormationItem"));
         }
         registered = false;
     }
 
+    // IInventory 実装
     @Override
     public int getSizeInventory() {
         return FORMATION_SLOT_COUNT;
     }
 
     @Override
-    public boolean isEmpty() {
-        for (ItemStack s : formationItems)
-            if (!s.isEmpty())
-                return false;
-        return true;
-    }
-
-    @Override
     public ItemStack getStackInSlot(int index) {
-        return (index >= 0 && index < FORMATION_SLOT_COUNT) ? formationItems[index] : ItemStack.EMPTY;
+        return (index >= 0 && index < FORMATION_SLOT_COUNT) ? formationItems[index] : null;
     }
 
     @Override
     public ItemStack decrStackSize(int index, int count) {
-        if (index < 0 || index >= FORMATION_SLOT_COUNT || formationItems[index].isEmpty())
-            return ItemStack.EMPTY;
+        if (index < 0 || index >= FORMATION_SLOT_COUNT || formationItems[index] == null)
+            return null;
         ItemStack result = formationItems[index].splitStack(count);
+        if (formationItems[index].stackSize == 0)
+            formationItems[index] = null;
         markDirty();
         return result;
     }
 
     @Override
-    public ItemStack removeStackFromSlot(int index) {
+    public ItemStack getStackInSlotOnClosing(int index) {
         if (index < 0 || index >= FORMATION_SLOT_COUNT)
-            return ItemStack.EMPTY;
+            return null;
         ItemStack old = formationItems[index];
-        formationItems[index] = ItemStack.EMPTY;
+        formationItems[index] = null;
         markDirty();
         return old;
     }
@@ -254,9 +250,19 @@ public class TileEntityStation extends TileEntity implements ITickable, IInvento
         if (index < 0 || index >= FORMATION_SLOT_COUNT)
             return;
         formationItems[index] = stack;
-        if (!stack.isEmpty() && stack.getCount() > 1)
-            stack.setCount(1);
+        if (stack != null && stack.stackSize > 1)
+            stack.stackSize = 1;
         markDirty();
+    }
+
+    @Override
+    public String getInventoryName() {
+        return stationName;
+    }
+
+    @Override
+    public boolean hasCustomInventoryName() {
+        return true;
     }
 
     @Override
@@ -265,58 +271,21 @@ public class TileEntityStation extends TileEntity implements ITickable, IInvento
     }
 
     @Override
-    public boolean isUsableByPlayer(EntityPlayer player) {
+    public boolean isUseableByPlayer(EntityPlayer player) {
         return true;
     }
 
     @Override
-    public void openInventory(EntityPlayer player) {
+    public void openInventory() {
     }
 
     @Override
-    public void closeInventory(EntityPlayer player) {
+    public void closeInventory() {
     }
 
     @Override
     public boolean isItemValidForSlot(int index, ItemStack stack) {
-        if (stack.getItem().getRegistryName() == null)
-            return false;
-        return "artpe".equals(stack.getItem().getRegistryName().getResourceDomain())
-                && "artpe_train".equals(stack.getItem().getRegistryName().getResourcePath());
-    }
-
-    @Override
-    public int getField(int id) {
-        return 0;
-    }
-
-    @Override
-    public void setField(int id, int value) {
-    }
-
-    @Override
-    public int getFieldCount() {
-        return 0;
-    }
-
-    @Override
-    public void clear() {
-        Arrays.fill(formationItems, ItemStack.EMPTY);
-        markDirty();
-    }
-
-    @Override
-    public String getName() {
-        return stationName;
-    }
-
-    @Override
-    public boolean hasCustomName() {
-        return true;
-    }
-
-    @Override
-    public ITextComponent getDisplayName() {
-        return new TextComponentString(stationName);
+        // ARAD内包のItemArtpeTrainクラスかどうかを判定
+        return stack != null && stack.getItem() instanceof ItemArtpeTrain;
     }
 }

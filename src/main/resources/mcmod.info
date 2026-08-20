@@ -3,12 +3,13 @@
   "modid": "arad",
   "name": "AppleRtmAutonomousDriving",
   "description": "",
-  "version": "1.0.1",
-  "mcversion": "1.12.2",
-  "authorList": ["Applepie"],
+  "version": "1.0.0-Alpha1",
+  "mcversion": "1.7.10",
+  "authorList": ["Applepie", "SuzumiyaTrainer"],
   "credits": "",
   "logoFile": "",
-  "url": "[https://github.com/ringo-1234/ARAD]",
-  "updateUrl": ""
+  "url": "",
+  "updateUrl": "",
+  "dependencies": ["rtm"]
 }
 ]

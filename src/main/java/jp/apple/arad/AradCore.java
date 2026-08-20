@@ -1,7 +1,17 @@
 package jp.apple.arad;
 
+import cpw.mods.fml.common.Mod;
+import cpw.mods.fml.common.Mod.EventHandler;
+import cpw.mods.fml.common.Mod.Instance;
+import cpw.mods.fml.common.SidedProxy;
+import cpw.mods.fml.common.event.FMLInitializationEvent;
+import cpw.mods.fml.common.event.FMLPostInitializationEvent;
+import cpw.mods.fml.common.event.FMLPreInitializationEvent;
+import cpw.mods.fml.common.network.NetworkRegistry;
+import cpw.mods.fml.common.registry.GameRegistry;
 import jp.apple.arad.handler.AradGuiHandler;
 import jp.apple.arad.handler.AradPacketHandler;
+//import jp.apple.arad.item.ItemArtpeTrain;
 import jp.apple.arad.limit.BlockSpeedLimitSign;
 import jp.apple.arad.limit.TileEntitySpeedLimitSign;
 import jp.apple.arad.proxy.CommonProxy;
@@ -13,23 +23,12 @@ import jp.apple.arad.station.BlockStation;
 import jp.apple.arad.station.TileEntityStation;
 import jp.apple.arad.substation.BlockSubStation;
 import jp.apple.arad.substation.TileEntitySubStation;
-import net.minecraft.item.ItemBlock;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.Mod.EventHandler;
-import net.minecraftforge.fml.common.Mod.Instance;
-import net.minecraftforge.fml.common.SidedProxy;
-import net.minecraftforge.fml.common.event.FMLInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
-import net.minecraftforge.fml.common.network.NetworkRegistry;
-import net.minecraftforge.fml.common.registry.GameRegistry;
+import net.minecraft.creativetab.CreativeTabs;
+import net.minecraft.item.Item;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import static jp.apple.AppleLib.tabAppleLib;
-
-@Mod(modid = "arad", name = "ARAD", version = "1.3.0", dependencies = "required-after:rtm")
-
+@Mod(modid = AradCore.MOD_ID, name = AradCore.MOD_NAME, version = "1.0.0-Alpha1", dependencies = "required-after:RTM")
 public class AradCore {
 
     public static final String MOD_ID = "arad";
@@ -37,11 +36,20 @@ public class AradCore {
 
     public static final Logger LOGGER = LogManager.getLogger(MOD_ID);
 
+    /** ARADu独自のCreativeTab */
+    public static final CreativeTabs tabAradu = new CreativeTabs("arad_tab") {
+        @Override
+        public Item getTabIconItem() {
+            return Item.getItemFromBlock(blockStation);
+        }
+    };
+
     public static BlockStation blockStation;
     public static BlockSpeedLimitSign blockSpeedLimitSign;
     public static BlockSectionMarker blockSectionMarker;
     public static BlockSignalSpeedMarker blockSignalSpeedMarker;
     public static BlockSubStation blockSubStation;
+//    public static ItemArtpeTrain itemArtpeTrain;
 
     @Instance(MOD_ID)
     public static AradCore INSTANCE;
@@ -54,21 +62,34 @@ public class AradCore {
         LOGGER.info("[Arad] preInit");
 
         blockStation = new BlockStation();
-        blockStation.setCreativeTab(tabAppleLib);
+        blockStation.setCreativeTab(tabAradu);
         blockSpeedLimitSign = new BlockSpeedLimitSign();
-        blockSpeedLimitSign.setCreativeTab(tabAppleLib);
+        blockSpeedLimitSign.setCreativeTab(tabAradu);
         blockSectionMarker = new BlockSectionMarker();
-        blockSectionMarker.setCreativeTab(tabAppleLib);
+        blockSectionMarker.setCreativeTab(tabAradu);
         blockSignalSpeedMarker = new BlockSignalSpeedMarker();
-        blockSignalSpeedMarker.setCreativeTab(tabAppleLib);
+        blockSignalSpeedMarker.setCreativeTab(tabAradu);
         blockSubStation = new BlockSubStation();
-        blockSubStation.setCreativeTab(tabAppleLib);
+        blockSubStation.setCreativeTab(tabAradu);
+//        itemArtpeTrain = new ItemArtpeTrain();
+//        itemArtpeTrain.setCreativeTab(tabAradu);
 
-        GameRegistry.registerTileEntity(TileEntityStation.class, "arad:station");
-        GameRegistry.registerTileEntity(TileEntitySpeedLimitSign.class, "arad:speed_limit_sign");
-        GameRegistry.registerTileEntity(TileEntitySectionMarker.class, "arad:section_marker");
-        GameRegistry.registerTileEntity(TileEntitySignalSpeedMarker.class, "arad:signal_speed_marker");
-        GameRegistry.registerTileEntity(TileEntitySubStation.class, "arad:substation");
+        // ブロック登録
+        GameRegistry.registerBlock(blockStation, "station");
+        GameRegistry.registerBlock(blockSpeedLimitSign, "speed_limit_sign");
+        GameRegistry.registerBlock(blockSectionMarker, "section_marker");
+        GameRegistry.registerBlock(blockSignalSpeedMarker, "signal_speed_marker");
+        GameRegistry.registerBlock(blockSubStation, "substation");
+
+        // アイテム登録
+//        GameRegistry.registerItem(itemArtpeTrain, "arad_train");
+
+        // TileEntity登録
+        GameRegistry.registerTileEntity(TileEntityStation.class, "arad_station");
+        GameRegistry.registerTileEntity(TileEntitySpeedLimitSign.class, "arad_speed_limit_sign");
+        GameRegistry.registerTileEntity(TileEntitySectionMarker.class, "arad_section_marker");
+        GameRegistry.registerTileEntity(TileEntitySignalSpeedMarker.class, "arad_signal_speed_marker");
+        GameRegistry.registerTileEntity(TileEntitySubStation.class, "arad_substation");
 
         AradPacketHandler.register();
         proxy.preInit(event);
@@ -84,32 +105,5 @@ public class AradCore {
     @EventHandler
     public void postInit(FMLPostInitializationEvent event) {
         proxy.postInit(event);
-    }
-
-    @Mod.EventBusSubscriber
-    public static class RegistrationHandler {
-        @net.minecraftforge.fml.common.eventhandler.SubscribeEvent
-        public static void registerBlocks(
-                net.minecraftforge.event.RegistryEvent.Register<net.minecraft.block.Block> event) {
-            event.getRegistry().register(blockStation);
-            event.getRegistry().register(blockSpeedLimitSign);
-            event.getRegistry().register(blockSectionMarker);
-            event.getRegistry().register(blockSignalSpeedMarker);
-            event.getRegistry().register(blockSubStation);
-        }
-
-        @net.minecraftforge.fml.common.eventhandler.SubscribeEvent
-        public static void registerItems(
-                net.minecraftforge.event.RegistryEvent.Register<net.minecraft.item.Item> event) {
-            event.getRegistry().register(new ItemBlock(blockStation).setRegistryName(blockStation.getRegistryName()));
-            event.getRegistry().register(
-                    new ItemBlock(blockSpeedLimitSign).setRegistryName(blockSpeedLimitSign.getRegistryName()));
-            event.getRegistry()
-                    .register(new ItemBlock(blockSectionMarker).setRegistryName(blockSectionMarker.getRegistryName()));
-            event.getRegistry().register(
-                    new ItemBlock(blockSignalSpeedMarker).setRegistryName(blockSignalSpeedMarker.getRegistryName()));
-            event.getRegistry().register(
-                    new ItemBlock(blockSubStation).setRegistryName(blockSubStation.getRegistryName()));
-        }
     }
 }

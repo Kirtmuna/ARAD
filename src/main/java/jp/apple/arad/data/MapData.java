@@ -1,10 +1,10 @@
 package jp.apple.arad.data;
 
+import net.minecraft.client.Minecraft;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import jp.apple.arad.cache.CachedRail;
 import jp.apple.arad.cache.RailCacheManager;
-import net.minecraft.client.Minecraft;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -29,8 +29,8 @@ public final class MapData {
             if (mc.isSingleplayer() && mc.getIntegratedServer() != null) {
                 return "sp_" + mc.getIntegratedServer().getFolderName();
             }
-            if (mc.getCurrentServerData() != null) {
-                String ip = mc.getCurrentServerData().serverIP
+            if (mc.func_147104_D() != null) {
+                String ip = mc.func_147104_D().serverIP
                         .replace(":", "_")
                         .replace(".", "_");
                 return "mp_" + ip;

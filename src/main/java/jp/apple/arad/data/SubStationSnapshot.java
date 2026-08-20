@@ -15,7 +15,7 @@ public final class SubStationSnapshot {
     public final boolean doorRight;
 
     public SubStationSnapshot(String id, String parentStationId, float x, float z, int dim, String mode,
-                              boolean turnback, int blockX, int blockY, int blockZ, boolean doorLeft, boolean doorRight) {
+            boolean turnback, int blockX, int blockY, int blockZ, boolean doorLeft, boolean doorRight) {
         this.id = id;
         this.parentStationId = parentStationId;
         this.x = x;

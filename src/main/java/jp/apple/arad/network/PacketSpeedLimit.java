@@ -7,16 +7,18 @@ import jp.apple.arad.speed.RailSpeedEntry;
 import jp.apple.arad.speed.RailSpeedManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.client.Minecraft;
 import net.minecraft.world.WorldServer;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
-import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
-import net.minecraftforge.fml.relauncher.Side;
+import cpw.mods.fml.common.network.simpleimpl.IMessage;
+import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
+import cpw.mods.fml.common.network.simpleimpl.MessageContext;
+import cpw.mods.fml.relauncher.Side;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
+@SuppressWarnings("unused")
 public final class PacketSpeedLimit implements IMessage {
 
     private byte mode;
@@ -96,19 +98,19 @@ public final class PacketSpeedLimit implements IMessage {
         public IMessage onMessage(PacketSpeedLimit msg, MessageContext ctx) {
             if (ctx.side == Side.SERVER) {
 
-                EntityPlayerMP player = ctx.getServerHandler().player;
-                WorldServer world = player.getServerWorld();
-                world.addScheduledTask(() -> {
-                    RailSpeedManager rsm = RailSpeedManager.get(world);
-                    rsm.setSpeedLimit(msg.key, msg.kmh);
+                EntityPlayerMP player = ctx.getServerHandler().playerEntity;
+                WorldServer world = (net.minecraft.world.WorldServer) player.worldObj;
 
-                    AradPacketHandler.CHANNEL.sendToAll(
-                            PacketSpeedLimit.syncAll(rsm.toEntries()));
-                });
+                RailSpeedManager rsm = RailSpeedManager.get(world);
+                rsm.setSpeedLimit(msg.key, msg.kmh);
+
+                AradPacketHandler.CHANNEL.sendToAll(
+                        PacketSpeedLimit.syncAll(rsm.toEntries()));
+
             } else {
 
-                Minecraft.getMinecraft()
-                        .addScheduledTask(() -> ClientSpeedLimitCache.INSTANCE.onDataReceived(msg.entries));
+                // Minecraft.getMinecraft().addScheduledTask(() ->
+                // ClientSpeedLimitCache.INSTANCE.onDataReceived(msg.entries));
             }
             return null;
         }

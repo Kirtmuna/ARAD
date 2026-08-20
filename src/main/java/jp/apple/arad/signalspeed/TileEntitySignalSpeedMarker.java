@@ -1,22 +1,23 @@
 package jp.apple.arad.signalspeed;
 
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.network.NetworkManager;
+import net.minecraft.network.Packet;
+import net.minecraft.network.play.server.S35PacketUpdateTileEntity;
+import net.minecraft.tileentity.TileEntity;
+
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+
 import jp.apple.arad.controller.AutoDriveController;
 import jp.apple.arad.controller.AutoDriveManager;
 import jp.apple.arad.section.SectionSlot;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.network.NetworkManager;
-import net.minecraft.network.play.server.SPacketUpdateTileEntity;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.ITickable;
-import net.minecraft.world.World;
 
-import java.util.HashMap;
-import java.util.Map;
-
-public class TileEntitySignalSpeedMarker extends TileEntity implements ITickable {
+public class TileEntitySignalSpeedMarker extends TileEntity {
 
     private static final double TRIGGER_RADIUS = 3.0;
-    private final Map<Long, Boolean> triggerState = new HashMap<>();
+    private final Map<Long, Boolean> triggerState = new HashMap<Long, Boolean>();
     private int[] speedMap = SectionSlot.defaultSpeedMap();
 
     private static int[] build(int[] src) {
@@ -36,30 +37,29 @@ public class TileEntitySignalSpeedMarker extends TileEntity implements ITickable
         this.speedMap = build(src);
         triggerState.clear();
         markDirty();
-        if (world != null && !world.isRemote)
-            world.notifyBlockUpdate(pos, world.getBlockState(pos), world.getBlockState(pos), 3);
+        if (worldObj != null && !worldObj.isRemote)
+            worldObj.markBlockForUpdate(xCoord, yCoord, zCoord);
     }
 
     @Override
-    public void update() {
-        World world = getWorld();
-        if (world == null || world.isRemote)
+    public void updateEntity() {
+        if (worldObj == null || worldObj.isRemote)
             return;
 
-        double bx = pos.getX() + 0.5;
-        double bz = pos.getZ() + 0.5;
+        double bx = xCoord + 0.5;
+        double bz = zCoord + 0.5;
         double r2 = TRIGGER_RADIUS * TRIGGER_RADIUS;
 
         for (AutoDriveController ctrl : AutoDriveManager.INSTANCE.getAllControllers()) {
             long fid = ctrl.getFormationId();
-            double tx = ctrl.getLeadX(world);
-            double tz = ctrl.getLeadZ(world);
+            double tx = ctrl.getLeadX(worldObj);
+            double tz = ctrl.getLeadZ(worldObj);
             if (tx == Double.MIN_VALUE)
                 continue;
 
             double dx = tx - bx, dz = tz - bz;
             boolean nowOn = (dx * dx + dz * dz) <= r2;
-            Boolean lastOn = triggerState.getOrDefault(fid, false);
+            Boolean lastOn = triggerState.containsKey(fid) ? triggerState.get(fid) : false;
 
             if (nowOn && !lastOn) {
                 ctrl.onSignalSpeedMapReceived(speedMap.clone());
@@ -67,14 +67,19 @@ public class TileEntitySignalSpeedMarker extends TileEntity implements ITickable
             triggerState.put(fid, nowOn);
         }
 
-        triggerState.entrySet().removeIf(e -> AutoDriveManager.INSTANCE.getController(e.getKey()) == null);
+        Iterator<Map.Entry<Long, Boolean>> it = triggerState.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<Long, Boolean> e = it.next();
+            if (AutoDriveManager.INSTANCE.getController(e.getKey()) == null) {
+                it.remove();
+            }
+        }
     }
 
     @Override
-    public NBTTagCompound writeToNBT(NBTTagCompound nbt) {
+    public void writeToNBT(NBTTagCompound nbt) {
         super.writeToNBT(nbt);
         nbt.setIntArray("speedMap", speedMap);
-        return nbt;
     }
 
     @Override
@@ -86,18 +91,15 @@ public class TileEntitySignalSpeedMarker extends TileEntity implements ITickable
     }
 
     @Override
-    public SPacketUpdateTileEntity getUpdatePacket() {
-        return new SPacketUpdateTileEntity(pos, 1, getUpdateTag());
+    public Packet getDescriptionPacket() {
+        NBTTagCompound nbt = new NBTTagCompound();
+        writeToNBT(nbt);
+        return new S35PacketUpdateTileEntity(xCoord, yCoord, zCoord, 1, nbt);
     }
 
     @Override
-    public NBTTagCompound getUpdateTag() {
-        return writeToNBT(new NBTTagCompound());
-    }
-
-    @Override
-    public void onDataPacket(NetworkManager net, SPacketUpdateTileEntity pkt) {
-        NBTTagCompound nbt = pkt.getNbtCompound();
+    public void onDataPacket(NetworkManager net, S35PacketUpdateTileEntity pkt) {
+        NBTTagCompound nbt = pkt.func_148857_g();
         if (nbt.hasKey("speedMap"))
             speedMap = build(nbt.getIntArray("speedMap"));
         triggerState.clear();

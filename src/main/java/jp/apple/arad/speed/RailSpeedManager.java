@@ -3,7 +3,7 @@ package jp.apple.arad.speed;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.world.World;
-import net.minecraft.world.storage.WorldSavedData;
+import net.minecraft.world.WorldSavedData;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -21,10 +21,10 @@ public final class RailSpeedManager extends WorldSavedData {
     }
 
     public static RailSpeedManager get(World world) {
-        RailSpeedManager mgr = (RailSpeedManager) world.loadData(RailSpeedManager.class, DATA_NAME);
+        RailSpeedManager mgr = (RailSpeedManager) world.mapStorage.loadData(RailSpeedManager.class, DATA_NAME);
         if (mgr == null) {
             mgr = new RailSpeedManager(DATA_NAME);
-            world.setData(DATA_NAME, mgr);
+            world.mapStorage.setData(DATA_NAME, mgr);
         }
         return mgr;
     }
@@ -62,7 +62,7 @@ public final class RailSpeedManager extends WorldSavedData {
     }
 
     @Override
-    public NBTTagCompound writeToNBT(NBTTagCompound nbt) {
+    public void writeToNBT(NBTTagCompound nbt) {
         NBTTagList list = new NBTTagList();
         for (Map.Entry<String, Integer> e : speedMap.entrySet()) {
             NBTTagCompound tag = new NBTTagCompound();
@@ -71,6 +71,6 @@ public final class RailSpeedManager extends WorldSavedData {
             list.appendTag(tag);
         }
         nbt.setTag("speeds", list);
-        return nbt;
+
     }
 }

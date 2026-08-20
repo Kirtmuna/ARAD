@@ -1,9 +1,10 @@
 package jp.apple.arad.station;
 
-import jp.apple.arad.data.StationSnapshot;
 import net.minecraft.world.World;
 
 import java.util.*;
+
+import jp.apple.arad.data.StationSnapshot;
 
 public final class StationRegistry {
 
@@ -15,14 +16,14 @@ public final class StationRegistry {
     }
 
     private static StationSnapshot toSnapshot(TileEntityStation te) {
-        if (te.getWorld() == null)
+        if (te.getWorldObj() == null)
             return null;
         return new StationSnapshot(
                 te.getStationId(),
                 te.getStationName(),
-                (float) (te.getPos().getX() + 0.5),
-                (float) (te.getPos().getZ() + 0.5),
-                te.getWorld().provider.getDimension(),
+                (float) (te.xCoord + 0.5),
+                (float) (te.zCoord + 0.5),
+                te.getWorldObj().provider.dimensionId,
                 te.isDoorLeft(),
                 te.isDoorRight(),
                 te.isSpawnReversed(),
@@ -40,10 +41,10 @@ public final class StationRegistry {
         loadedStationMap.put(te.getStationId(), te);
         StationSnapshot snapshot = toSnapshot(te);
         if (snapshot != null) {
-            purgeStaleSnapshotsAtSamePos(te.getWorld(), snapshot);
+            purgeStaleSnapshotsAtSamePos(te.getWorldObj(), snapshot);
             stationCache.put(snapshot.id, snapshot);
-            if (te.getWorld() != null && !te.getWorld().isRemote) {
-                StationCacheStore.get(te.getWorld()).upsert(snapshot);
+            if (te.getWorldObj() != null && !te.getWorldObj().isRemote) {
+                StationCacheStore.get(te.getWorldObj()).upsert(snapshot);
             }
         }
     }
@@ -120,12 +121,12 @@ public final class StationRegistry {
         TileEntityStation nearest = null;
         double best = maxDist * maxDist;
         for (TileEntityStation te : loadedStationMap.values()) {
-            if (te.getWorld() == null)
+            if (te.getWorldObj() == null)
                 continue;
-            if (te.getWorld().provider.getDimension() != dim)
+            if (te.getWorldObj().provider.dimensionId != dim)
                 continue;
-            double dx = te.getPos().getX() + 0.5 - x;
-            double dz = te.getPos().getZ() + 0.5 - z;
+            double dx = te.xCoord + 0.5 - x;
+            double dz = te.zCoord + 0.5 - z;
             double d2 = dx * dx + dz * dz;
             if (d2 < best) {
                 best = d2;

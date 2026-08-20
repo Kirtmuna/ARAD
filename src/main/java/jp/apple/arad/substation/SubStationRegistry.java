@@ -1,8 +1,8 @@
 package jp.apple.arad.substation;
 
-import jp.apple.arad.data.SubStationSnapshot;
-
 import java.util.*;
+
+import jp.apple.arad.data.SubStationSnapshot;
 
 public final class SubStationRegistry {
 
@@ -14,25 +14,25 @@ public final class SubStationRegistry {
     }
 
     public void register(TileEntitySubStation te) {
-        if (te == null || te.getWorld() == null)
+        if (te == null || te.getWorldObj() == null)
             return;
         loadedMap.put(te.getSubStationId(), te);
         SubStationSnapshot snap = new SubStationSnapshot(
                 te.getSubStationId(),
                 te.getParentStationId(),
-                (float) (te.getPos().getX() + 0.5),
-                (float) (te.getPos().getZ() + 0.5),
-                te.getWorld().provider.getDimension(),
+                (float) (te.xCoord + 0.5),
+                (float) (te.zCoord + 0.5),
+                te.getWorldObj().provider.dimensionId,
                 te.getMode().name(),
                 te.isTurnback(),
-                te.getPos().getX(),
-                te.getPos().getY(),
-                te.getPos().getZ(),
+                te.xCoord,
+                te.yCoord,
+                te.zCoord,
                 te.isDoorLeft(),
                 te.isDoorRight());
         cache.put(snap.id, snap);
-        if (!te.getWorld().isRemote) {
-            SubStationCacheStore.get(te.getWorld()).upsert(snap);
+        if (!te.getWorldObj().isRemote) {
+            SubStationCacheStore.get(te.getWorldObj()).upsert(snap);
         }
     }
 

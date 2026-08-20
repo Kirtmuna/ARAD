@@ -1,12 +1,13 @@
 package jp.apple.arad.route;
 
-import jp.apple.arad.data.RouteSnapshot;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.nbt.NBTTagString;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import jp.apple.arad.data.RouteSnapshot;
 
 public final class Route {
 

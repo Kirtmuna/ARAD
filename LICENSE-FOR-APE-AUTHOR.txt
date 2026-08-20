@@ -1,0 +1,14 @@
+Original ARADの作者にのみ適用されるライセンス
+注：Originalは1.12.2verのことを指す。
+
+Original ARADの作者はGNU Lessor General Public Licenseに関わらず、
+自由に指定されたソースコード及びリソースを使用することを認めます。
+
+==== REFERENCE ENGLISH TRANSLATION ====
+This English translation is only for Reference.
+NOTE: Original means 1.12.2ver.
+
+The license applied for the original author of Original ARAD
+
+Notwithstanding the GNU Lessor General Public License,
+the original author(s) of Original ARAD are free to use the source code and resources.

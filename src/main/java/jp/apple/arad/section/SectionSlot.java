@@ -1,7 +1,6 @@
 package jp.apple.arad.section;
 
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.math.BlockPos;
 
 public final class SectionSlot {
 
@@ -13,7 +12,7 @@ public final class SectionSlot {
 
     public String name;
 
-    public BlockPos signalPos;
+    public int sigX, sigY, sigZ;
 
     public int passX;
     public int passZ;
@@ -22,31 +21,39 @@ public final class SectionSlot {
 
     public SectionSlot() {
         this.name = "";
-        this.signalPos = BlockPos.ORIGIN;
+        this.sigX = 0;
+        this.sigY = 0;
+        this.sigZ = 0;
         this.passX = 0;
         this.passZ = 0;
         this.speedMap = defaultSpeedMap();
     }
 
-    public SectionSlot(BlockPos signalPos, int captureRadius) {
+    public SectionSlot(int sigX, int sigY, int sigZ, int captureRadius) {
         this.name = "";
-        this.signalPos = signalPos;
-        this.passX = signalPos.getX();
-        this.passZ = signalPos.getZ();
+        this.sigX = sigX;
+        this.sigY = sigY;
+        this.sigZ = sigZ;
+        this.passX = sigX;
+        this.passZ = sigZ;
         this.speedMap = defaultSpeedMap();
     }
 
-    public SectionSlot(String name, BlockPos signalPos, int passX, int passZ) {
+    public SectionSlot(String name, int sigX, int sigY, int sigZ, int passX, int passZ) {
         this.name = name == null ? "" : name;
-        this.signalPos = signalPos;
+        this.sigX = sigX;
+        this.sigY = sigY;
+        this.sigZ = sigZ;
         this.passX = passX;
         this.passZ = passZ;
         this.speedMap = defaultSpeedMap();
     }
 
-    public SectionSlot(String name, BlockPos signalPos, int passX, int passZ, int[] speedMap) {
+    public SectionSlot(String name, int sigX, int sigY, int sigZ, int passX, int passZ, int[] speedMap) {
         this.name = name == null ? "" : name;
-        this.signalPos = signalPos;
+        this.sigX = sigX;
+        this.sigY = sigY;
+        this.sigZ = sigZ;
         this.passX = passX;
         this.passZ = passZ;
         this.speedMap = clampSpeedMap(speedMap);
@@ -80,17 +87,19 @@ public final class SectionSlot {
         if (tag.hasKey("name"))
             s.name = tag.getString("name");
         if (tag.hasKey("sigPos"))
-            s.signalPos = BlockPos.fromLong(tag.getLong("sigPos"));
+            s.sigX = tag.getInteger("sigX");
+        s.sigY = tag.getInteger("sigY");
+        s.sigZ = tag.getInteger("sigZ");
 
         if (tag.hasKey("passX")) {
             s.passX = tag.getInteger("passX");
-        } else if (s.signalPos != null) {
-            s.passX = s.signalPos.getX();
+        } else {
+            s.passX = s.sigX;
         }
         if (tag.hasKey("passZ")) {
             s.passZ = tag.getInteger("passZ");
-        } else if (s.signalPos != null) {
-            s.passZ = s.signalPos.getZ();
+        } else {
+            s.passZ = s.sigZ;
         }
 
         if (tag.hasKey("speedMap")) {
@@ -117,7 +126,9 @@ public final class SectionSlot {
     public NBTTagCompound toNBT() {
         NBTTagCompound tag = new NBTTagCompound();
         tag.setString("name", name == null ? "" : name);
-        tag.setLong("sigPos", signalPos.toLong());
+        tag.setInteger("sigX", sigX);
+        tag.setInteger("sigY", sigY);
+        tag.setInteger("sigZ", sigZ);
         tag.setInteger("passX", passX);
         tag.setInteger("passZ", passZ);
         tag.setIntArray("speedMap", speedMap);
@@ -127,6 +138,6 @@ public final class SectionSlot {
     public SectionSlot copy() {
         int[] mapCopy = new int[MAP_SIZE];
         System.arraycopy(speedMap, 0, mapCopy, 0, MAP_SIZE);
-        return new SectionSlot(name, signalPos, passX, passZ, mapCopy);
+        return new SectionSlot(name, sigX, sigY, sigZ, passX, passZ, mapCopy);
     }
 }

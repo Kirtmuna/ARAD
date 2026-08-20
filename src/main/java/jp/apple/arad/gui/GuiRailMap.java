@@ -1,5 +1,11 @@
 package jp.apple.arad.gui;
 
+import net.minecraft.client.gui.GuiButton;
+import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.client.gui.GuiTextField;
+import org.lwjgl.opengl.GL11;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import jp.apple.arad.cache.CachedRail;
 import jp.apple.arad.data.*;
 import jp.apple.arad.handler.AradKeyHandler;
@@ -8,12 +14,7 @@ import jp.apple.arad.network.PacketConfirmRoute;
 import jp.apple.arad.network.PacketRouteEdit;
 import jp.apple.arad.network.PacketSpeedLimit;
 import jp.apple.arad.speed.ClientSpeedLimitCache;
-import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.client.gui.GuiTextField;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
@@ -23,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+@SuppressWarnings("unused")
 @SideOnly(Side.CLIENT)
 public final class GuiRailMap extends GuiScreen {
 
@@ -41,6 +43,7 @@ public final class GuiRailMap extends GuiScreen {
     private static final int BTN_SPAWN_ONE_BASE = 600;
     private static final int BTN_EDIT_SAVE = 400;
     private static final int BTN_EDIT_CANCEL = 401;
+
     private static final int BTN_SPEED_MODE = 500;
     private static final int BTN_SPEED_SAVE = 501;
     private static final int BTN_SPEED_CANCEL = 502;
@@ -129,9 +132,9 @@ public final class GuiRailMap extends GuiScreen {
 
     @Override
     public void initGui() {
-        if (mc.player != null) {
-            offsetX = mc.player.posX;
-            offsetZ = mc.player.posZ;
+        if (mc.thePlayer != null) {
+            offsetX = mc.thePlayer.posX;
+            offsetZ = mc.thePlayer.posZ;
         }
         routeListScroll = 0;
         lastRouteCount = MapData.INSTANCE.getRoutes().size();
@@ -139,6 +142,7 @@ public final class GuiRailMap extends GuiScreen {
         rebuildButtons();
     }
 
+    @SuppressWarnings("unchecked")
     private void rebuildButtons() {
         buttonList.clear();
 
@@ -149,14 +153,14 @@ public final class GuiRailMap extends GuiScreen {
             buttonList.add(
                     new GuiButton(BTN_EDIT_CANCEL, dx + (PANEL_W - 15) / 2 + 5, dy, (PANEL_W - 15) / 2, 20, "閉じる"));
             if (editNameField == null) {
-                editNameField = new GuiTextField(11, fontRenderer,
+                editNameField = new GuiTextField(fontRendererObj,
                         width - PANEL_W + 5, EDIT_NAME_FIELD_Y, PANEL_W - 10, 18);
                 editNameField.setMaxStringLength(32);
                 editNameField.setText(editRouteName);
                 editNameField.setFocused(false);
             }
             if (editCountField == null) {
-                editCountField = new GuiTextField(10, fontRenderer,
+                editCountField = new GuiTextField(fontRendererObj,
                         width - PANEL_W + 5, EDIT_COUNT_FIELD_Y, PANEL_W - 10, 18);
                 editCountField.setMaxStringLength(3);
                 editCountField.setText("1");
@@ -171,7 +175,7 @@ public final class GuiRailMap extends GuiScreen {
             buttonList.add(new GuiButton(BTN_SPEED_SAVE, dx, dy, 55, 20, "設定"));
             buttonList.add(new GuiButton(BTN_SPEED_CANCEL, dx + 60, dy, 55, 20, "キャンセル"));
             if (speedInputField == null) {
-                speedInputField = new GuiTextField(20, fontRenderer,
+                speedInputField = new GuiTextField(fontRendererObj,
                         width / 2 - 40, height / 2 - 5, 80, 18);
                 speedInputField.setMaxStringLength(4);
                 speedInputField.setText("120");
@@ -243,7 +247,7 @@ public final class GuiRailMap extends GuiScreen {
         }
 
         String coord = String.format("X %.1f  Z %.1f", toWorldX(mouseX), toWorldZ(mouseY));
-        drawString(fontRenderer, coord, 6, height - 11, TEXT_DIM);
+        drawString(fontRendererObj, coord, 6, height - 11, TEXT_DIM);
         drawScaleBar(mapW);
 
         if (routeCreateMode && routeNameField != null)
@@ -282,7 +286,7 @@ public final class GuiRailMap extends GuiScreen {
     }
 
     private void drawSpeedLimitSigns(int mapW) {
-        int dim = mc.world != null ? mc.world.provider.getDimension() : 0;
+        int dim = mc.theWorld != null ? mc.theWorld.provider.dimensionId : 0;
 
         for (Map.Entry<String, Integer> entry : ClientSpeedLimitCache.INSTANCE.getAllEntries()) {
             String key = entry.getKey();
@@ -311,7 +315,7 @@ public final class GuiRailMap extends GuiScreen {
 
     private void drawSpeedSign(int sx, int sy, int kmh) {
         String label = String.valueOf(kmh);
-        int tw = fontRenderer.getStringWidth(label);
+        int tw = fontRendererObj.getStringWidth(label);
         int pw = tw + 4;
         int ph = 11;
 
@@ -320,7 +324,7 @@ public final class GuiRailMap extends GuiScreen {
         drawRect(sx - pw / 2, sy + ph - 1, sx + pw / 2 + 1, sy + ph, 0xFFCC0000);
         drawRect(sx - pw / 2, sy, sx - pw / 2 + 1, sy + ph, 0xFFCC0000);
         drawRect(sx + pw / 2, sy, sx + pw / 2 + 1, sy + ph, 0xFFCC0000);
-        fontRenderer.drawString(label, sx - tw / 2, sy + 2, 0xFF000000);
+        fontRendererObj.drawString(label, sx - tw / 2, sy + 2, 0xFF000000);
     }
 
     private void drawSpeedInputDialog() {
@@ -334,8 +338,8 @@ public final class GuiRailMap extends GuiScreen {
         drawRect(dx, dy, dx + 1, dy + dh, BORDER);
         drawRect(dx + dw - 1, dy, dx + dw, dy + dh, BORDER);
 
-        drawCenteredString(fontRenderer, "§l制限速度を設定 (km/h)", width / 2, dy + 8, 0xFFFFFFFF);
-        drawCenteredString(fontRenderer, "§70 で制限解除", width / 2, dy + 20, TEXT_DIM);
+        drawCenteredString(fontRendererObj, "§l制限速度を設定 (km/h)", width / 2, dy + 8, 0xFFFFFFFF);
+        drawCenteredString(fontRendererObj, "§70 で制限解除", width / 2, dy + 20, TEXT_DIM);
 
         if (speedInputField != null)
             speedInputField.drawTextBox();
@@ -351,20 +355,21 @@ public final class GuiRailMap extends GuiScreen {
                 continue;
             drawVerticalLine(sx, 0, height, GRID);
             if (gx % 64 == 0 && sx > 4 && sx < mapW - 24)
-                drawString(fontRenderer, (int) gx + "", sx + 2, 2, 0x338899CC);
+                drawString(fontRendererObj, (int) gx + "", sx + 2, 2, 0x338899CC);
         }
         for (double gz = gz0; gz <= toWorldZ(height); gz += gs) {
             int sz = toSZ(gz);
             drawHorizontalLine(0, mapW, sz, GRID);
             if (gz % 64 == 0 && sz > 12 && sz < height - 4)
-                drawString(fontRenderer, (int) gz + "", 2, sz - 4, 0x338899CC);
+                drawString(fontRendererObj, (int) gz + "", 2, sz - 4, 0x338899CC);
         }
     }
 
     private void drawRails(List<CachedRail> rails, int mapW) {
-        GlStateManager.disableTexture2D();
-        GlStateManager.enableBlend();
-        GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+        org.lwjgl.opengl.GL11.glDisable(org.lwjgl.opengl.GL11.GL_TEXTURE_2D);
+        org.lwjgl.opengl.GL11.glEnable(org.lwjgl.opengl.GL11.GL_BLEND);
+        org.lwjgl.opengl.GL11.glBlendFunc(org.lwjgl.opengl.GL11.GL_SRC_ALPHA,
+                org.lwjgl.opengl.GL11.GL_ONE_MINUS_SRC_ALPHA);
         GL11.glEnable(GL11.GL_LINE_SMOOTH);
 
         GL11.glLineWidth(speedEditMode ? 2.5f : 1.8f);
@@ -413,14 +418,14 @@ public final class GuiRailMap extends GuiScreen {
 
         GL11.glLineWidth(1f);
         GL11.glDisable(GL11.GL_LINE_SMOOTH);
-        GlStateManager.enableTexture2D();
+        org.lwjgl.opengl.GL11.glEnable(org.lwjgl.opengl.GL11.GL_TEXTURE_2D);
     }
 
     private void drawRouteLines(List<RouteSnapshot> routes,
             List<StationSnapshot> stations, int mapW) {
-        if (routes.isEmpty())
+        if (routes == null)
             return;
-        GlStateManager.disableTexture2D();
+        org.lwjgl.opengl.GL11.glDisable(org.lwjgl.opengl.GL11.GL_TEXTURE_2D);
         GL11.glEnable(GL11.GL_LINE_SMOOTH);
         GL11.glLineWidth(2.2f);
         for (int ri = 0; ri < routes.size(); ri++) {
@@ -442,13 +447,13 @@ public final class GuiRailMap extends GuiScreen {
         }
         GL11.glLineWidth(1f);
         GL11.glDisable(GL11.GL_LINE_SMOOTH);
-        GlStateManager.enableTexture2D();
+        org.lwjgl.opengl.GL11.glEnable(org.lwjgl.opengl.GL11.GL_TEXTURE_2D);
     }
 
     private void drawPendingRoutePreview(List<StationSnapshot> stations, int mapW) {
         if (!routeCreateMode || pendingIds.size() < 2)
             return;
-        GlStateManager.disableTexture2D();
+        org.lwjgl.opengl.GL11.glDisable(org.lwjgl.opengl.GL11.GL_TEXTURE_2D);
         GL11.glLineWidth(2.5f);
         GL11.glEnable(GL11.GL_LINE_SMOOTH);
         GL11.glBegin(GL11.GL_LINE_STRIP);
@@ -462,7 +467,7 @@ public final class GuiRailMap extends GuiScreen {
         GL11.glEnd();
         GL11.glLineWidth(1f);
         GL11.glDisable(GL11.GL_LINE_SMOOTH);
-        GlStateManager.enableTexture2D();
+        org.lwjgl.opengl.GL11.glEnable(org.lwjgl.opengl.GL11.GL_TEXTURE_2D);
     }
 
     private void drawStations(List<StationSnapshot> stations,
@@ -508,17 +513,18 @@ public final class GuiRailMap extends GuiScreen {
                 }
                 StringBuilder sb = new StringBuilder();
                 for (int i = 0; i < nums.size(); i++) {
-                    if (i > 0) sb.append(",");
+                    if (i > 0)
+                        sb.append(",");
                     sb.append(nums.get(i));
                 }
                 String ns = sb.toString();
-                drawString(fontRenderer, ns, sx - fontRenderer.getStringWidth(ns) / 2, sz - 4, 0xFF000000);
+                drawString(fontRendererObj, ns, sx - fontRendererObj.getStringWidth(ns) / 2, sz - 4, 0xFF000000);
             }
 
             String label = st.name;
-            int lw = fontRenderer.getStringWidth(label);
+            int lw = fontRendererObj.getStringWidth(label);
             drawRect(sx - lw / 2 - 1, sz + r + 2, sx + lw / 2 + 2, sz + r + 12, 0xAA000000);
-            drawString(fontRenderer, label, sx - lw / 2, sz + r + 3,
+            drawString(fontRendererObj, label, sx - lw / 2, sz + r + 3,
                     isPending ? 0xFFFFDD44 : (hasRoute ? 0xFF88FFCC : 0xFF66DDFF));
         }
     }
@@ -532,39 +538,39 @@ public final class GuiRailMap extends GuiScreen {
         int px = mapW + 6;
         int py = 6;
 
-        drawString(fontRenderer, "§lArad", px, py, 0xFFFFFFFF);
+        drawString(fontRendererObj, "§lArad", px, py, 0xFFFFFFFF);
         py += 14;
 
         if (editDialogOpen) {
             drawRect(mapW + 2, py - 2, width - 2, py + 22, 0xFF1A2A55);
             drawRect(mapW + 2, py - 2, width - 2, py - 1, 0xFF44DDFF);
-            drawString(fontRenderer, "§e路線編集", px, py, 0xFFFFDD44);
-            drawString(fontRenderer, "§7路線名:", px, EDIT_NAME_LABEL_Y, TEXT_DIM);
-            drawString(fontRenderer, "§7同時運行本数:", px, EDIT_COUNT_LABEL_Y, TEXT_DIM);
+            drawString(fontRendererObj, "§e路線編集", px, py, 0xFFFFDD44);
+            drawString(fontRendererObj, "§7路線名:", px, EDIT_NAME_LABEL_Y, TEXT_DIM);
+            drawString(fontRendererObj, "§7同時運行本数:", px, EDIT_COUNT_LABEL_Y, TEXT_DIM);
 
         } else if (routeCreateMode) {
             drawRect(mapW + 2, py - 2, width - 2, py + 22, 0xFF1A2A55);
             drawRect(mapW + 2, py - 2, width - 2, py - 1, 0xFF44DDFF);
-            drawString(fontRenderer, "§e路線作成モード", px, py + 2, 0xFFFFDD44);
+            drawString(fontRendererObj, "§e路線作成モード", px, py + 2, 0xFFFFDD44);
 
         } else if (speedEditMode) {
             drawRect(mapW + 2, py - 2, width - 2, py + 22, 0xFF1A2A55);
             drawRect(mapW + 2, py - 2, width - 2, py - 1, 0xFFFFAA00);
-            drawString(fontRenderer, "§e⚡ 制限速度設定モード", px, py, 0xFFFFDD44);
+            drawString(fontRendererObj, "§e⚡ 制限速度設定モード", px, py, 0xFFFFDD44);
             py += 12;
-            drawString(fontRenderer, "§7レールをクリックして", px, py, TEXT_DIM);
+            drawString(fontRendererObj, "§7レールをクリックして", px, py, TEXT_DIM);
             py += 12;
-            drawString(fontRenderer, "§7制限速度を設定", px, py, TEXT_DIM);
+            drawString(fontRendererObj, "§7制限速度を設定", px, py, TEXT_DIM);
             py += 14;
-            drawString(fontRenderer, "§7右クリック: 制限解除", px, py, TEXT_DIM);
+            drawString(fontRendererObj, "§7右クリック: 制限解除", px, py, TEXT_DIM);
         } else {
-            drawString(fontRenderer, "§7路線リスト", px, py, TEXT_DIM);
+            drawString(fontRendererObj, "§7路線リスト", px, py, TEXT_DIM);
             py += 14;
             drawHorizontalLine(mapW + 2, width - 2, py, BORDER);
             py += 6;
 
-            if (routes.isEmpty()) {
-                drawString(fontRenderer, "§7（路線なし）", px, py, TEXT_DIM);
+            if (routes == null) {
+                drawString(fontRendererObj, "§7（路線なし）", px, py, TEXT_DIM);
             } else {
                 clampRouteListScroll();
                 int rows = getVisibleRouteRows();
@@ -583,18 +589,18 @@ public final class GuiRailMap extends GuiScreen {
                             | (int) (rgb[2] * 255);
 
                     drawRect(px, itemY, px + 3, itemY + 32, lineColor);
-                    String trimmedName = fontRenderer.trimStringToWidth(r.name, PANEL_W - 55);
-                    drawString(fontRenderer, "§l" + trimmedName, px + 8, itemY + 2, 0xFFFFFFFF);
+                    String trimmedName = fontRendererObj.trimStringToWidth(r.name, PANEL_W - 55);
+                    drawString(fontRendererObj, "§l" + trimmedName, px + 8, itemY + 2, 0xFFFFFFFF);
                     String status = "§7" + r.stationIds.size() + "駅  "
                             + (r.trainCount > 0 ? "§a●" + r.trainCount + "本運行" : "§7○停止");
-                    drawString(fontRenderer, status, px + 8, itemY + 14, TEXT_DIM);
+                    drawString(fontRendererObj, status, px + 8, itemY + 14, TEXT_DIM);
                     drawHorizontalLine(mapW + 2, width - 2, itemY + 36, 0xFF1A2A55);
                 }
                 if (routes.size() > rows && rows > 0) {
                     int from = start + 1;
                     int to = start + drawCount;
                     String page = "§7" + from + "-" + to + "/" + routes.size();
-                    drawString(fontRenderer, page, px, ROUTE_LIST_TOP - 10, TEXT_DIM);
+                    drawString(fontRendererObj, page, px, ROUTE_LIST_TOP - 10, TEXT_DIM);
                 }
             }
         }
@@ -605,21 +611,21 @@ public final class GuiRailMap extends GuiScreen {
             List<RouteSnapshot> routes) {
         drawRect(6, 6, 190, 58, PANEL_BG);
         drawRect(6, 6, 190, 7, BORDER);
-        long alive = formations.stream().filter(f -> !f.cars.isEmpty()).count();
-        int cars = formations.stream().mapToInt(FormationSnapshot::carCount).sum();
-        drawString(fontRenderer, "§lArad", 12, 12, 0xFFFFFFFF);
-        drawString(fontRenderer, "編成: " + alive + " 本", 12, 26, TEXT);
-        drawString(fontRenderer, "車両: " + cars + " 両", 12, 38, TEXT);
-        drawString(fontRenderer, String.format("縮尺 1:%.0f", 16.0 / scale), 12, 50, TEXT_DIM);
+        long alive = formations.stream().filter(f -> f != null && f.cars != null).count();
+        int cars = formations.stream().filter(f -> f != null).mapToInt(f -> f.carCount()).sum();
+        drawString(fontRendererObj, "§lArad", 12, 12, 0xFFFFFFFF);
+        drawString(fontRendererObj, "編成: " + alive + " 本", 12, 26, TEXT);
+        drawString(fontRendererObj, "車両: " + cars + " 両", 12, 38, TEXT);
+        drawString(fontRendererObj, String.format("縮尺 1:%.0f", 16.0 / scale), 12, 50, TEXT_DIM);
     }
 
     private void drawFormations(List<FormationSnapshot> formations, int mapW) {
         for (FormationSnapshot f : formations) {
-            if (f.cars.isEmpty())
+            if (f.cars == null)
                 continue;
             float[] col = speedColor(f.speed);
             if (f.cars.size() > 1) {
-                GlStateManager.disableTexture2D();
+                org.lwjgl.opengl.GL11.glDisable(org.lwjgl.opengl.GL11.GL_TEXTURE_2D);
                 GL11.glLineWidth(2.5f);
                 GL11.glBegin(GL11.GL_LINE_STRIP);
                 GL11.glColor4f(col[0], col[1], col[2], 0.5f);
@@ -627,7 +633,7 @@ public final class GuiRailMap extends GuiScreen {
                     GL11.glVertex2i(toSX(car[0]), toSZ(car[1]));
                 GL11.glEnd();
                 GL11.glLineWidth(1f);
-                GlStateManager.enableTexture2D();
+                org.lwjgl.opengl.GL11.glEnable(org.lwjgl.opengl.GL11.GL_TEXTURE_2D);
             }
             for (int i = 0; i < f.cars.size(); i++) {
                 float[] car = f.cars.get(i);
@@ -641,20 +647,20 @@ public final class GuiRailMap extends GuiScreen {
             if (!offScreen(sx, sz, mapW)) {
                 String idStr = f.idLabel();
                 String spdStr = f.speedLabel();
-                int lw = Math.max(fontRenderer.getStringWidth(idStr), fontRenderer.getStringWidth(spdStr));
+                int lw = Math.max(fontRendererObj.getStringWidth(idStr), fontRendererObj.getStringWidth(spdStr));
                 int lx = sx - lw / 2;
-                drawString(fontRenderer, idStr, lx, sz - 22, 0xFFFFFFFF);
-                drawString(fontRenderer, spdStr, lx, sz - 13, speedTextColor(f.speed));
-                drawString(fontRenderer, f.carCount() + "両", lx, sz - 4, TEXT_DIM);
+                drawString(fontRendererObj, idStr, lx, sz - 22, 0xFFFFFFFF);
+                drawString(fontRendererObj, spdStr, lx, sz - 13, speedTextColor(f.speed));
+                drawString(fontRendererObj, f.carCount() + "両", lx, sz - 4, TEXT_DIM);
             }
         }
     }
 
     private void drawCarMarker(int sx, int sz, float yaw, float[] col, boolean front) {
-        GlStateManager.disableTexture2D();
-        GlStateManager.pushMatrix();
-        GlStateManager.translate(sx, sz, 0);
-        GlStateManager.rotate(yaw, 0, 0, 1);
+        org.lwjgl.opengl.GL11.glDisable(org.lwjgl.opengl.GL11.GL_TEXTURE_2D);
+        org.lwjgl.opengl.GL11.glPushMatrix();
+        org.lwjgl.opengl.GL11.glTranslatef(sx, sz, 0);
+        org.lwjgl.opengl.GL11.glRotatef(yaw, 0, 0, 1);
         GL11.glBegin(GL11.GL_TRIANGLES);
         if (front) {
             GL11.glColor4f(col[0], col[1], col[2], 1f);
@@ -668,18 +674,18 @@ public final class GuiRailMap extends GuiScreen {
             GL11.glVertex2f(3, 3);
         }
         GL11.glEnd();
-        GlStateManager.popMatrix();
-        GlStateManager.enableTexture2D();
+        org.lwjgl.opengl.GL11.glPopMatrix();
+        org.lwjgl.opengl.GL11.glEnable(org.lwjgl.opengl.GL11.GL_TEXTURE_2D);
     }
 
     private void drawPlayers(List<PlayerSnapshot> players, int mapW) {
-        String myName = (mc.player != null) ? mc.player.getName() : null;
+        String myName = (mc.thePlayer != null) ? mc.thePlayer.getCommandSenderName() : null;
         for (PlayerSnapshot p : players) {
             int sx = toSX(p.x), sz = toSZ(p.z);
             if (offScreen(sx, sz, mapW))
                 continue;
             boolean isMe = p.name.equals(myName);
-            GlStateManager.disableTexture2D();
+            org.lwjgl.opengl.GL11.glDisable(org.lwjgl.opengl.GL11.GL_TEXTURE_2D);
             GL11.glPointSize(isMe ? 10f : 6f);
             GL11.glBegin(GL11.GL_POINTS);
             if (isMe)
@@ -689,10 +695,10 @@ public final class GuiRailMap extends GuiScreen {
             GL11.glVertex2i(sx, sz);
             GL11.glEnd();
             GL11.glPointSize(1f);
-            GlStateManager.enableTexture2D();
+            org.lwjgl.opengl.GL11.glEnable(org.lwjgl.opengl.GL11.GL_TEXTURE_2D);
             String label = isMe ? "§b" + p.name : p.name;
-            int lw = fontRenderer.getStringWidth(p.name);
-            drawString(fontRenderer, label, sx - lw / 2, sz + 7, isMe ? 0xFF7BC8FF : 0xFFFFFF66);
+            int lw = fontRendererObj.getStringWidth(p.name);
+            drawString(fontRendererObj, label, sx - lw / 2, sz + 7, isMe ? 0xFF7BC8FF : 0xFFFFFF66);
         }
     }
 
@@ -703,18 +709,18 @@ public final class GuiRailMap extends GuiScreen {
         drawRect(bx, by + 9, bx + blen, by + 11, 0xFFFFFFFF);
         drawVerticalLine(bx, by + 7, by + 13, 0xFFFFFFFF);
         drawVerticalLine(bx + blen, by + 7, by + 13, 0xFFFFFFFF);
-        drawString(fontRenderer, label, bx + blen / 2 - fontRenderer.getStringWidth(label) / 2, by, TEXT);
+        drawString(fontRendererObj, label, bx + blen / 2 - fontRendererObj.getStringWidth(label) / 2, by, TEXT);
     }
 
     @Override
-    protected void actionPerformed(GuiButton button) throws IOException {
+    protected void actionPerformed(GuiButton button) {
         int id = button.id;
 
         if (id == BTN_ROUTE_MODE) {
             routeCreateMode = true;
             speedEditMode = false;
             pendingIds.clear();
-            routeNameField = new GuiTextField(0, fontRenderer, width - PANEL_W + 5, 92, PANEL_W - 10, 18);
+            routeNameField = new GuiTextField(fontRendererObj, width - PANEL_W + 5, 92, PANEL_W - 10, 18);
             routeNameField.setMaxStringLength(32);
             routeNameField.setText("新路線");
             rebuildButtons();
@@ -787,7 +793,7 @@ public final class GuiRailMap extends GuiScreen {
         if (editRouteId == null || editCountField == null)
             return;
         String newName = (editNameField != null) ? editNameField.getText().trim() : "";
-        if (newName.isEmpty())
+        if (newName == null)
             newName = editRouteName;
         try {
             int count = Integer.parseInt(editCountField.getText().trim());
@@ -843,7 +849,7 @@ public final class GuiRailMap extends GuiScreen {
         if (hoveredCoreKey == null)
             return;
 
-        int dim = mc.world != null ? mc.world.provider.getDimension() : 0;
+        int dim = mc.theWorld != null ? mc.theWorld.provider.dimensionId : 0;
 
         String key = dim + ":" + hoveredCoreKey;
 
@@ -858,7 +864,7 @@ public final class GuiRailMap extends GuiScreen {
     }
 
     @Override
-    public void handleMouseInput() throws IOException {
+    public void handleMouseInput() {
         super.handleMouseInput();
         int scroll = Mouse.getEventDWheel();
         if (scroll != 0) {
@@ -877,7 +883,7 @@ public final class GuiRailMap extends GuiScreen {
     }
 
     @Override
-    protected void mouseClicked(int mx, int my, int btn) throws IOException {
+    protected void mouseClicked(int mx, int my, int btn) {
         if (routeCreateMode && routeNameField != null)
             routeNameField.mouseClicked(mx, my, btn);
         if (editDialogOpen && editCountField != null)
@@ -900,11 +906,10 @@ public final class GuiRailMap extends GuiScreen {
                 int sx = toSX(st.x), sz = toSZ(st.z);
                 if (Math.abs(mx - sx) <= STATION_HIT_R && Math.abs(my - sz) <= STATION_HIT_R) {
                     if (btn == 0) {
-                        if (pendingIds.isEmpty() || !pendingIds.get(pendingIds.size() - 1).equals(st.id)) {
+                        if (pendingIds == null || !pendingIds.get(pendingIds.size() - 1).equals(st.id)) {
                             pendingIds.add(st.id);
                         }
-                    }
-                    else if (btn == 1)
+                    } else if (btn == 1)
                         pendingIds.remove(st.id);
                     return;
                 }
@@ -920,8 +925,8 @@ public final class GuiRailMap extends GuiScreen {
     }
 
     @Override
-    protected void mouseReleased(int mx, int my, int state) {
-        super.mouseReleased(mx, my, state);
+    protected void mouseMovedOrUp(int mx, int my, int state) {
+        super.mouseMovedOrUp(mx, my, state);
         if (state == 0)
             dragging = false;
     }
@@ -937,7 +942,7 @@ public final class GuiRailMap extends GuiScreen {
     }
 
     @Override
-    protected void keyTyped(char ch, int keyCode) throws IOException {
+    protected void keyTyped(char ch, int keyCode) {
         if (speedInputOpen && speedInputField != null) {
             if (keyCode == Keyboard.KEY_RETURN || keyCode == Keyboard.KEY_NUMPADENTER) {
                 saveSpeedInput();

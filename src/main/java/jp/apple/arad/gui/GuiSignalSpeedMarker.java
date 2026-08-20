@@ -1,19 +1,21 @@
 package jp.apple.arad.gui;
 
+import net.minecraft.client.gui.GuiButton;
+import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.client.gui.GuiTextField;
+
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import jp.apple.arad.handler.AradPacketHandler;
 import jp.apple.arad.network.PacketSignalSpeedMarkerConfig;
 import jp.apple.arad.section.SectionSlot;
 import jp.apple.arad.signalspeed.TileEntitySignalSpeedMarker;
-import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.client.gui.GuiTextField;
-import net.minecraft.util.math.BlockPos;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+
 import org.lwjgl.input.Keyboard;
 
 import java.io.IOException;
 
+@SuppressWarnings("unused")
 @SideOnly(Side.CLIENT)
 public class GuiSignalSpeedMarker extends GuiScreen {
 
@@ -34,18 +36,21 @@ public class GuiSignalSpeedMarker extends GuiScreen {
     private static final int FH = 14;
 
     private final TileEntitySignalSpeedMarker te;
-    private final BlockPos pos;
+    private final int x, y, z;
 
     private final GuiTextField[] speedFields = new GuiTextField[SectionSlot.MAP_SIZE];
 
     private int gx, gy;
 
-    public GuiSignalSpeedMarker(TileEntitySignalSpeedMarker te, BlockPos pos) {
+    public GuiSignalSpeedMarker(TileEntitySignalSpeedMarker te, int x, int y, int z) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
         this.te = te;
-        this.pos = pos;
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public void initGui() {
         gx = (width - GUI_W) / 2;
         gy = (height - GUI_H) / 2;
@@ -57,7 +62,7 @@ public class GuiSignalSpeedMarker extends GuiScreen {
 
         for (int i = 0; i < SectionSlot.MAP_SIZE; i++) {
             String val = (map[i] == SectionSlot.SPEED_FREE) ? "-1" : String.valueOf(map[i]);
-            GuiTextField f = new GuiTextField(i, fontRenderer, col0, rowY + i * 22, FW, FH);
+            GuiTextField f = new GuiTextField(fontRendererObj, col0, rowY + i * 22, FW, FH);
             f.setMaxStringLength(5);
             f.setText(val);
             f.setCanLoseFocus(true);
@@ -80,17 +85,18 @@ public class GuiSignalSpeedMarker extends GuiScreen {
         drawRect(gx + GUI_W - 1, gy, gx + GUI_W, gy + GUI_H, C_BORDER);
         drawRect(gx + 1, gy + GUI_H - 30, gx + GUI_W - 1, gy + GUI_H - 29, C_BORDER);
 
-        drawString(fontRenderer, "§l現示ごとの制限を設定", gx + 8, gy + 6, C_WHITE);
+        drawString(fontRendererObj, "§l現示ごとの制限を設定", gx + 8, gy + 6, C_WHITE);
 
         int rowY = gy + 28;
         for (int i = 0; i < SectionSlot.MAP_SIZE; i++) {
             int y = rowY + i * 22;
-            drawString(fontRenderer, "現示 " + i + ":", gx + 8, y + 1, C_TEXT);
+            drawString(fontRendererObj, "現示 " + i + ":", gx + 8, y + 1, C_TEXT);
             GuiTextField f = speedFields[i];
             if (f != null) {
-                drawRect(f.x - 1, f.y - 1, f.x + f.width + 1, f.y + f.height + 1, C_BORDER);
-                drawRect(f.x, f.y, f.x + f.width, f.y + f.height, C_FIELD);
-                drawString(fontRenderer, "km/h", f.x + FW + 4, y + 1, C_DIM);
+                drawRect(f.xPosition - 1, f.yPosition - 1, f.xPosition + f.width + 1, f.yPosition + f.height + 1,
+                        C_BORDER);
+                drawRect(f.xPosition, f.yPosition, f.xPosition + f.width, f.yPosition + f.height, C_FIELD);
+                drawString(fontRendererObj, "km/h", f.xPosition + FW + 4, y + 1, C_DIM);
             }
         }
 
@@ -101,7 +107,7 @@ public class GuiSignalSpeedMarker extends GuiScreen {
     }
 
     @Override
-    protected void actionPerformed(GuiButton btn) throws IOException {
+    protected void actionPerformed(GuiButton btn) {
         if (btn.id == BTN_SAVE) {
             int[] map = new int[SectionSlot.MAP_SIZE];
             int[] def = SectionSlot.defaultSpeedMap();
@@ -109,7 +115,7 @@ public class GuiSignalSpeedMarker extends GuiScreen {
                 map[i] = parseSpeed(speedFields[i], def[i]);
             }
             AradPacketHandler.CHANNEL.sendToServer(
-                    new PacketSignalSpeedMarkerConfig(pos, map));
+                    new PacketSignalSpeedMarkerConfig(x, y, z, map));
             mc.displayGuiScreen(null);
         } else if (btn.id == BTN_CANCEL) {
             mc.displayGuiScreen(null);
@@ -128,7 +134,7 @@ public class GuiSignalSpeedMarker extends GuiScreen {
     }
 
     @Override
-    protected void mouseClicked(int mx, int my, int btn) throws IOException {
+    protected void mouseClicked(int mx, int my, int btn) {
         for (GuiTextField f : speedFields)
             if (f != null)
                 f.mouseClicked(mx, my, btn);
@@ -136,7 +142,7 @@ public class GuiSignalSpeedMarker extends GuiScreen {
     }
 
     @Override
-    protected void keyTyped(char ch, int key) throws IOException {
+    protected void keyTyped(char ch, int key) {
         if (key == Keyboard.KEY_ESCAPE) {
             mc.displayGuiScreen(null);
             return;

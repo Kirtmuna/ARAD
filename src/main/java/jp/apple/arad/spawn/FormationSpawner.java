@@ -1,15 +1,16 @@
 package jp.apple.arad.spawn;
 
-import jp.apple.arad.station.TileEntityStation;
-import jp.apple.artpe.item.ItemArtpeTrain;
 import jp.ngt.ngtlib.math.NGTMath;
 import jp.ngt.rtm.entity.train.util.FormationManager;
 import jp.ngt.rtm.rail.TileEntityLargeRailBase;
 import jp.ngt.rtm.rail.util.RailMap;
+//import jp.apple.arad.item.ItemArtpeTrain;
+import jp.apple.item.ItemArtpeTrain;
+import jp.apple.arad.station.TileEntityStation;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
+@SuppressWarnings("unused")
 public final class FormationSpawner {
 
     private static final int RAIL_SEARCH_ABOVE_MIN = 1;
@@ -22,30 +23,33 @@ public final class FormationSpawner {
             TileEntityStation firstStation,
             TileEntityStation secondStation,
             ItemStack formationItem) {
-        if (world.isRemote || formationItem.isEmpty())
+        if (world.isRemote || formationItem == null)
             return 0L;
         if (!(formationItem.getItem() instanceof ItemArtpeTrain))
             return 0L;
 
-        BlockPos stationPos = firstStation.getPos();
+        int sx = firstStation.xCoord;
+        int sy = firstStation.yCoord;
+        int sz = firstStation.zCoord;
 
-        RailMap rail = findRailAbove(world, stationPos);
+        RailMap rail = findRailAbove(world, sx, sy, sz);
         if (rail == null) {
             jp.apple.arad.AradCore.LOGGER.warn(
                     "[Arad] 駅 '{}' の上方にレールが見つかりません", firstStation.getStationName());
             return 0L;
         }
 
-        BlockPos railPos = findRailBlockPos(world, stationPos);
-        if (railPos == null)
-            railPos = stationPos.up(2);
+        int[] railPos = findRailBlockPos(world, sx, sy, sz);
+        if (railPos == null) {
+            railPos = new int[] { sx, sy + 2, sz };
+        }
 
-        float spawnYaw = calcSpawnYaw(rail, stationPos, firstStation, secondStation);
+        float spawnYaw = calcSpawnYaw(rail, sx, sz, firstStation, secondStation);
         if (firstStation.isSpawnReversed()) {
             spawnYaw = NGTMath.wrapAngle(spawnYaw + 180.0f);
         }
 
-        ItemArtpeTrain.spawnFormation(world, formationItem, railPos, spawnYaw);
+        ItemArtpeTrain.spawnFormation(world, formationItem, railPos[0], railPos[1], railPos[2], spawnYaw);
 
         long newId = 0L;
         for (Long fid : FormationManager.getInstance().getFormations().keySet()) {
@@ -60,13 +64,13 @@ public final class FormationSpawner {
         return newId;
     }
 
-    private static RailMap findRailAbove(World world, BlockPos stationPos) {
+    private static RailMap findRailAbove(World world, int sx, int sy, int sz) {
         for (int dy = RAIL_SEARCH_ABOVE_MIN; dy <= RAIL_SEARCH_ABOVE_MAX; dy++) {
             for (int dx = -1; dx <= 1; dx++) {
                 for (int dz = -1; dz <= 1; dz++) {
-                    double cx = stationPos.getX() + dx + 0.5;
-                    double cy = stationPos.getY() + dy;
-                    double cz = stationPos.getZ() + dz + 0.5;
+                    double cx = sx + dx + 0.5;
+                    double cy = sy + dy;
+                    double cz = sz + dz + 0.5;
                     RailMap rm = TileEntityLargeRailBase.getRailMapFromCoordinates(
                             world, null, cx, cy, cz);
                     if (rm != null)
@@ -77,13 +81,15 @@ public final class FormationSpawner {
         return null;
     }
 
-    private static BlockPos findRailBlockPos(World world, BlockPos stationPos) {
+    private static int[] findRailBlockPos(World world, int sx, int sy, int sz) {
         for (int dy = RAIL_SEARCH_ABOVE_MIN; dy <= RAIL_SEARCH_ABOVE_MAX; dy++) {
             for (int dx = -1; dx <= 1; dx++) {
                 for (int dz = -1; dz <= 1; dz++) {
-                    BlockPos candidate = stationPos.add(dx, dy, dz);
-                    if (world.getTileEntity(candidate) instanceof jp.ngt.rtm.rail.TileEntityLargeRailBase) {
-                        return candidate;
+                    int cx = sx + dx;
+                    int cy = sy + dy;
+                    int cz = sz + dz;
+                    if (world.getTileEntity(cx, cy, cz) instanceof jp.ngt.rtm.rail.TileEntityLargeRailBase) {
+                        return new int[] { cx, cy, cz };
                     }
                 }
             }
@@ -91,13 +97,13 @@ public final class FormationSpawner {
         return null;
     }
 
-    private static float calcSpawnYaw(RailMap rail, BlockPos stationPos,
-                                      TileEntityStation first, TileEntityStation second) {
+    private static float calcSpawnYaw(RailMap rail, int sx, int sz,
+            TileEntityStation first, TileEntityStation second) {
         int split = Math.max(8, (int) (rail.getLength() * 2.0));
         split = Math.min(split, 128);
 
         int nearestIdx = rail.getNearlestPoint(split,
-                stationPos.getX() + 0.5, stationPos.getZ() + 0.5);
+                sx + 0.5, sz + 0.5);
         return NGTMath.wrapAngle(rail.getRailYaw(split, nearestIdx));
     }
 
