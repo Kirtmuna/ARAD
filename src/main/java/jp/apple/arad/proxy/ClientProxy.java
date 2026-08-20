@@ -1,5 +1,6 @@
 package jp.apple.arad.proxy;
 
+import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.relauncher.Side;
@@ -21,6 +22,8 @@ public class ClientProxy extends CommonProxy {
     public void init(FMLInitializationEvent event) {
         super.init(event);
         MinecraftForge.EVENT_BUS.register(new ClientAradEventHandler());
-        MinecraftForge.EVENT_BUS.register(new AradKeyHandler());
+        AradKeyHandler keyHandler = new AradKeyHandler();
+        MinecraftForge.EVENT_BUS.register(keyHandler);
+        FMLCommonHandler.instance().bus().register(keyHandler);
     }
 }

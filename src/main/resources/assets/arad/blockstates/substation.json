@@ -1,5 +1,7 @@
 {
   "variants": {
-    "normal": { "model": "aradu:substation" }
+    "normal": {
+      "model": "arad:substation"
+    }
   }
 }

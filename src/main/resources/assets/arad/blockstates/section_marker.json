@@ -1,5 +1,7 @@
 {
   "variants": {
-    "normal": { "model": "aradu:section_marker" }
+    "normal": {
+      "model": "arad:section_marker"
+    }
   }
 }

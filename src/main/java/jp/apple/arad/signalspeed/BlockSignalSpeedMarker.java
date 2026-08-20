@@ -12,7 +12,8 @@ public class BlockSignalSpeedMarker extends BlockContainer {
 
     public BlockSignalSpeedMarker() {
         super(Material.iron);
-        setBlockName("aradu_signal_speed_marker");
+        setBlockName("arad_signal_speed_marker");
+        setBlockTextureName("arad:signalspeed");
         setHardness(2.0f);
         setResistance(12.0f);
     }

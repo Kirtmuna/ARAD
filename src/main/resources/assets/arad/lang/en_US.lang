@@ -1,0 +1,9 @@
+itemGroup.arad_tab=ARAD
+key.categories.arad=ARAD
+key.arad.open_map=Open Map
+tile.arad_station.name=Station Block
+tile.arad_substation.name=Sub Station Block
+tile.arad_speed_limit_sign.name=Speed Limit Block
+tile.arad_section_marker.name=Section Marker Block
+tile.arad_signal_speed_marker.name=Signal Speed Marker Block
+item.arad_train.name=Formation Spawner Item

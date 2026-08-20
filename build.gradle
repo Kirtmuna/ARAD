@@ -24,13 +24,7 @@ eclipse {
     }
 }
 
-def privateMavenUrl = (findProperty('privateMavenUrl') ?: '').toString().trim()
-def privateMavenUser = (findProperty('privateMavenUser') ?: '').toString().trim()
-def privateMavenPassword = (findProperty('privateMavenPassword') ?: '').toString().trim()
 def rtmCoordinate = (findProperty('rtmCoordinate') ?: 'com.github.Kai-Z-JP:KaizPatchX:v1.10.1:dev').toString().trim()
-def usePrivateMaven = !privateMavenUrl.isEmpty()
-def forceSafeNetty = (findProperty('forceSafeNetty') ?: 'false').toString().toBoolean()
-def forceSafeScala = (findProperty('forceSafeScala') ?: 'false').toString().toBoolean()
 
 minecraft {
     mcVersion = '1.7.10'
@@ -41,13 +35,7 @@ minecraft {
         'MODID': project.modId,
         'MODNAME': project.modName
     ]
-    
-    // UniMixins configuration
-    // Enable mixins if usesMixins is true in gradle.properties
-    if (project.findProperty('usesMixins') == 'true') {
-        extraRunJvmArguments.add("-Dmixin.debug=${project.findProperty('usesMixinDebug') ?: 'false'}")
-    }
-    extraRunJvmArguments.add("-Dlog4j.configurationFile=${project.file('src/main/resources/log4j2.xml').toURI().toString()}")
+
     // Defense-in-depth for Log4Shell-class issues.
     extraRunJvmArguments.add('-Dlog4j2.formatMsgNoLookups=true')
     extraRunJvmArguments.add('-Dlog4j2.enableJndiLookup=false')
@@ -60,34 +48,8 @@ repositories {
         url = 'https://nexus.gtnewhorizons.com/repository/public/'
     }
     maven {
-        name = 'CurseMaven'
-        url = 'https://cursemaven.com'
-    }
-    maven {
-        name = 'SpongePowered'
-        url = 'https://repo.spongepowered.org/repository/maven-public/'
-    }
-    maven {
         name = 'JitPack'
         url = 'https://jitpack.io'
-    }
-    maven {
-        name = 'EngineHub'
-        url = 'https://maven.enginehub.org/repo/'
-    }
-    maven {
-        name = "Modrinth"
-        url = "https://api.modrinth.com/maven"
-    }
-    if (usePrivateMaven) {
-        maven {
-            name = 'Private Maven'
-            url = uri(privateMavenUrl)
-            credentials {
-                username = privateMavenUser
-                password = privateMavenPassword
-            }
-        }
     }
 }
 
@@ -100,58 +62,14 @@ configurations.configureEach {
         force 'org.yaml:snakeyaml:2.6'
         force 'junit:junit:4.13.2'
 
-        // Log4j: Force to 2.17.2 (last Java-8-compatible patched release) to close all Log4j CVEs.
-        // Log4Shell (JNDI) is also blocked at runtime via the JVM flags in the minecraft block above.
-        // Note: these libs are provided by Minecraft/Forge at runtime and are NOT shipped in the mod JAR.
+        // Log4j security baseline
         force 'org.apache.logging.log4j:log4j-core:2.26.1'
         force 'org.apache.logging.log4j:log4j-api:2.26.1'
         force 'org.apache.logging.log4j:log4j-slf4j-impl:2.26.1'
 
-        // Guava: CANNOT be forced globally. Minecraft 1.7.10 decompiled source uses Guava 14.x APIs
-        // (e.g. Objects.firstNonNull) that were removed in Guava 21+. Forcing 32.x causes compilation
-        // failures in build/rfg/minecraft-src. Guava alerts are suppressed in dependabot.yml instead.
-
-        // Apache HttpClient: 4.5.14 fixes all known Moderate CVEs in the 4.x branch.
-        // HttpClient is not directly referenced by the Minecraft 1.7.10 decompiled source.
         force 'org.apache.httpcomponents:httpclient:4.5.14'
         force 'org.apache.httpcomponents:httpcore:4.4.16'
-
-        // These upgrades can affect legacy 1.7.10 runtime behavior, so they are opt-in.
-        if (forceSafeNetty) {
-            force 'io.netty:netty-all:4.0.56.Final'
-        }
-        if (forceSafeScala) {
-            force 'org.scala-lang:scala-library:3.8.4'
-            force 'org.scala-lang:scala-compiler:3.8.4'
-            force 'org.scala-lang:scala-reflect:3.8.4'
-        }
     }
-}
-
-configurations {
-    nashornLib
-}
-
-// GitHub ReleaseからWebCTCをダウンロードする設定（CI・ローカル共通）
-def webctcJarFile = file("$buildDir/downloaded-libs/WebCTC-1.7.10-v1.2.0.jar")
-def downloadWebCTC = tasks.register('downloadWebCTC') {
-    outputs.file(webctcJarFile)
-    doLast {
-        if (!webctcJarFile.exists()) {
-            webctcJarFile.parentFile.mkdirs()
-            println "Downloading WebCTC jar from GitHub Release..."
-            new URL("https://github.com/WebCTC/WebCTC/releases/download/v1.2.0/WebCTC-1.7.10-v1.2.0.jar").withInputStream { input ->
-                webctcJarFile.withOutputStream { output ->
-                    output << input
-                }
-            }
-        }
-    }
-}
-
-// Gradleのプロジェクト評価前にダウンロードを保証
-tasks.withType(JavaCompile).configureEach {
-    dependsOn downloadWebCTC
 }
 
 dependencies {
@@ -167,62 +85,8 @@ dependencies {
         }
     }
 
-    // UniMixins (Late Mixin support)
-    implementation('com.github.LegacyModdingMC.UniMixins:unimixins-all-1.7.10:0.3.1')
-
-    // Some Java 8 runtimes used by launchers no longer include jdk.nashorn.*.
-    nashornLib('org.openjdk.nashorn:nashorn-core:15.7')
-
-    // Annotation processor for Mixins
-    annotationProcessor('com.google.guava:guava:33.6.0-jre')
-    annotationProcessor('com.google.code.gson:gson:2.14.0')
-
-    // ASM
-    implementation 'org.ow2.asm:asm:9.10.1'
-    implementation 'org.ow2.asm:asm-commons:9.10.1'
-    implementation 'org.ow2.asm:asm-tree:9.10.1'
-    implementation 'org.ow2.asm:asm-analysis:9.10.1'
-    implementation 'org.ow2.asm:asm-util:9.10.1'
-
-    // fastutil: Needed for ObjectArrayList type in gtnhlib mixin
-    compileOnly('it.unimi.dsi:fastutil:8.5.19')
-
-    // RTM compatibility target (KaizPatchX), resolved from JitPack — see rtmCoordinate
-    // in gradle.properties. Public, so no private Maven or libs/ jar is required.
+    // RTM compatibility target (KaizPatchX), resolved from JitPack
     compileOnly(rfg.deobf(rtmCoordinate))
-
-    // Angelica + Iris (for mixin compilation) via JitPack.
-    // Iris classes are bundled inside the Angelica jar.
-    def angelicaVersion = (findProperty('angelicaVersion') ?: '2.1.61').toString().trim()
-    compileOnly("com.github.GTNewHorizons:Angelica:${angelicaVersion}")
-
-    // Hodgepodge via JitPack
-    def hodgepodgeVersion = (findProperty('hodgepodgeVersion') ?: '2.7.186').toString().trim()
-    compileOnly("com.github.GTNewHorizons:Hodgepodge:${hodgepodgeVersion}")
-
-    // WorldEdit
-    compileOnly 'com.sk89q.worldedit:worldedit-core:6.1.4-SNAPSHOT'
-    compileOnly 'com.sk89q.worldedit:worldedit-forge-mc1.7.10:6.1.1-SNAPSHOT'
-
-    // Optional: any extra jars dropped in libs/ are still picked up for local-only testing
-    // (e.g. a target mod you want to test against but that isn't declared as a dependency above)
-    // libs/ is gitignored and does not need to contain anything for a normal build to succeed.
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
-
-    // CustomNPC+ (compileOnly: Mixin target, not shipped in ARAD JAR)
-    // Resolved from JitPack.
-    def customNpcVersion = (findProperty('customNpcVersion') ?: 'master-SNAPSHOT').toString().trim()
-    compileOnly rfg.deobf("com.github.KAMKEEL:CustomNPC-Plus:${customNpcVersion}")
-
-    // WebCTC: GitHub Release から自動取得したファイルを rfg.deobf に渡す
-    compileOnly rfg.deobf(files(webctcJarFile))
-
-    // IFTTTUtilMixin用: ATSAssistModが実行時に提供するJacksonのDatabindを
-    // コンパイル時のみ参照する(ARAD本体には同梱しない)
-    compileOnly 'com.fasterxml.jackson.core:jackson-databind:2.22.1'
-
-    // Journeymap Integration
-    compileOnly rfg.deobf("maven.modrinth:lfHFW1mp:cxw6VoUX")
 }
 
 tasks.withType(JavaCompile) {
@@ -233,37 +97,17 @@ tasks.withType(JavaExec) {
     systemProperty 'file.encoding', 'UTF-8'
 }
 
-java { toolchain { languageVersion = JavaLanguageVersion.of(8) } }
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(8)
+    }
+}
 
 tasks.named('jar') {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     archiveClassifier.set('')
-    from {
-        configurations.nashornLib.collect { it.isDirectory() ? it : zipTree(it) }
-    }
-    // Exclude Java 9+ module-info.class that confuses FML 1.7.10's ASM 5.0.3 scanning.
-    // FML's JarDiscoverer cannot parse Java 9 class files and marks the JAR as "corrupt zip",
-    // which prevents proper @Mod discovery and causes loading screen issues.
     exclude 'module-info.class'
-    exclude { details ->
-        if (details.relativePath.pathString.startsWith('META-INF/services/')) {
-            String name = details.name
-            return !name.equals('com.gtnewhorizon.gtnhmixins.ILateMixinLoader') &&
-                   !name.equals('io.github.tox1cozz.mixinbooterlegacy.ILateMixinLoader')
-        }
-        return false;
-    }
     exclude 'META-INF/versions/'
-    // org.openjdk.nashorn (nashorn-core standalone port) contains class files compiled for Java 11+
-    // (class version 55+) which ASM 5.0.3 bundled with FML 1.7.10 cannot parse.
-    // FML's JarDiscoverer crashes during mod scanning and marks the JAR as "corrupt zip",
-    // causing @Mod discovery failure and preventing the mod from loading.
-    // On Java 8 (the target runtime), the built-in jdk.nashorn.* from the JDK is used instead,
-    // so this standalone Nashorn package is entirely unnecessary at runtime.
-    // On Java 11+, these classes must be provided via a different mechanism (e.g. JVM modules).
-    exclude 'org/openjdk/nashorn/'
-    // Exclude ATSAssistMod compile-only stub classes from the final JAR
-    exclude 'jp/kaiz/atsassistmod/'
 }
 
 jar {
@@ -275,13 +119,7 @@ jar {
             'Implementation-Title': project.modId,
             'Implementation-Version': project.version,
             'Implementation-Vendor': 'SuzumiyaTrainer',
-            'Implementation-Timestamp': new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
-            // CoreMod / Mixin Tweak
-            'FMLCorePluginContainsFMLMod': 'true',
-            'TweakClass': 'org.spongepowered.asm.launch.MixinTweaker',
-            'MixinConfigs': 'mixins.arad.json',
-            'ForceLoadAsMod': 'true',
-            'FMLCorePlugin': 'jp.apple.arad.asm.ARADCorePlugin'
+            'Implementation-Timestamp': new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
         ])
     }
 }
@@ -305,22 +143,9 @@ processResources {
             'modName': mod_name
         )
     }
-    
-    filesMatching('fmlbranding.properties') {
-        expand(
-            'modVersion': mod_version
-        )
-    }
 }
 
 tasks.withType(Javadoc) {
     options.encoding = 'UTF-8'
     options.charSet = 'UTF-8'
-}
-
-task showDirs {
-    doLast {
-        println "プロジェクトディレクトリ: $projectDir"
-        println "ルートプロジェクトディレクトリ: $rootDir"
-    }
 }

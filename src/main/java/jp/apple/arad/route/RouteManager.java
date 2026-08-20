@@ -11,7 +11,7 @@ import jp.apple.arad.data.RouteSnapshot;
 
 public final class RouteManager extends WorldSavedData {
 
-    public static final String DATA_NAME = "aradu_routes";
+    public static final String DATA_NAME = "arad_routes";
 
     private final Map<String, Route> routes = new LinkedHashMap<>();
 

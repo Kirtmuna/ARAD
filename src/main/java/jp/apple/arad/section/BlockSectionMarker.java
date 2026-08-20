@@ -12,7 +12,8 @@ public class BlockSectionMarker extends BlockContainer {
 
     public BlockSectionMarker() {
         super(Material.iron);
-        setBlockName("aradu_section_marker");
+        setBlockName("arad_section_marker");
+        setBlockTextureName("arad:section");
         setHardness(2.0f);
         setResistance(12.0f);
     }

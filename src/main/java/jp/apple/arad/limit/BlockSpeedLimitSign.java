@@ -12,7 +12,8 @@ public class BlockSpeedLimitSign extends BlockContainer {
 
     public BlockSpeedLimitSign() {
         super(Material.iron);
-        setBlockName("aradu_speed_limit_sign");
+        setBlockName("arad_speed_limit_sign");
+        setBlockTextureName("arad:limit");
         setHardness(2.0f);
         setResistance(12.0f);
     }

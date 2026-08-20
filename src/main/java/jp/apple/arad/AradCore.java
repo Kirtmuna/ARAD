@@ -28,7 +28,7 @@ import net.minecraft.item.Item;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-@Mod(modid = AradCore.MOD_ID, name = AradCore.MOD_NAME, version = "1.0.0-Alpha1", dependencies = "required-after:rtm")
+@Mod(modid = AradCore.MOD_ID, name = AradCore.MOD_NAME, version = "1.0.0-Alpha1", dependencies = "required-after:RTM")
 public class AradCore {
 
     public static final String MOD_ID = "arad";
@@ -37,7 +37,7 @@ public class AradCore {
     public static final Logger LOGGER = LogManager.getLogger(MOD_ID);
 
     /** ARADu独自のCreativeTab */
-    public static final CreativeTabs tabAradu = new CreativeTabs("aradu_tab") {
+    public static final CreativeTabs tabAradu = new CreativeTabs("arad_tab") {
         @Override
         public Item getTabIconItem() {
             return Item.getItemFromBlock(blockStation);
@@ -82,14 +82,14 @@ public class AradCore {
         GameRegistry.registerBlock(blockSubStation, "substation");
 
         // アイテム登録
-        GameRegistry.registerItem(itemArtpeTrain, "aradu_train");
+        GameRegistry.registerItem(itemArtpeTrain, "arad_train");
 
         // TileEntity登録
-        GameRegistry.registerTileEntity(TileEntityStation.class, "aradu_station");
-        GameRegistry.registerTileEntity(TileEntitySpeedLimitSign.class, "aradu_speed_limit_sign");
-        GameRegistry.registerTileEntity(TileEntitySectionMarker.class, "aradu_section_marker");
-        GameRegistry.registerTileEntity(TileEntitySignalSpeedMarker.class, "aradu_signal_speed_marker");
-        GameRegistry.registerTileEntity(TileEntitySubStation.class, "aradu_substation");
+        GameRegistry.registerTileEntity(TileEntityStation.class, "arad_station");
+        GameRegistry.registerTileEntity(TileEntitySpeedLimitSign.class, "arad_speed_limit_sign");
+        GameRegistry.registerTileEntity(TileEntitySectionMarker.class, "arad_section_marker");
+        GameRegistry.registerTileEntity(TileEntitySignalSpeedMarker.class, "arad_signal_speed_marker");
+        GameRegistry.registerTileEntity(TileEntitySubStation.class, "arad_substation");
 
         AradPacketHandler.register();
         proxy.preInit(event);

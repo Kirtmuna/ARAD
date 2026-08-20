@@ -113,7 +113,7 @@ public final class RailCacheManager {
     private File getCacheFile(String serverId) {
         File dir = new File(
                 net.minecraft.client.Minecraft.getMinecraft().mcDataDir,
-                "aradu_cache");
+                "arad_cache");
         if (!dir.exists())
             dir.mkdirs();
 

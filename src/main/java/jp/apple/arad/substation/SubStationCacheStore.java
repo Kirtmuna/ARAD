@@ -14,7 +14,7 @@ import jp.apple.arad.data.SubStationSnapshot;
 
 public final class SubStationCacheStore extends WorldSavedData {
 
-    public static final String DATA_NAME = "aradu_substation_cache";
+    public static final String DATA_NAME = "arad_substation_cache";
 
     private final Map<String, SubStationSnapshot> snapshotMap = new LinkedHashMap<>();
 

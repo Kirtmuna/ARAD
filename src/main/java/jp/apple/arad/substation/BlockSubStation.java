@@ -14,10 +14,10 @@ public class BlockSubStation extends BlockContainer {
 
     public BlockSubStation() {
         super(Material.glass);
-        setBlockName("aradu_substation");
+        setBlockName("arad_substation");
+        setBlockTextureName("arad:substation");
         setHardness(1.5f);
         setResistance(10f);
-        setLightLevel(0.5f);
     }
 
     @Override
@@ -46,7 +46,12 @@ public class BlockSubStation extends BlockContainer {
 
     @Override
     @SideOnly(Side.CLIENT)
+    public int getRenderBlockPass() {
+        return 1;
+    }
+
+    @Override
     public int getRenderType() {
-        return -1;
+        return 0;
     }
 }

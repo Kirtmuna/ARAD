@@ -37,7 +37,8 @@ public class ItemArtpeTrain extends Item {
 
     public ItemArtpeTrain() {
         super();
-        setUnlocalizedName("aradu_train");
+        setUnlocalizedName("arad_train");
+        setTextureName("minecraft:minecart_normal");
         setMaxStackSize(1);
     }
 

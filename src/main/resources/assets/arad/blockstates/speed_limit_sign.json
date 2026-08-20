@@ -1,5 +1,7 @@
 {
   "variants": {
-    "normal": { "model": "aradu:speed_limit_sign" }
+    "normal": {
+      "model": "arad:speed_limit_sign"
+    }
   }
 }

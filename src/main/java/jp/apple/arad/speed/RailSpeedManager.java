@@ -12,7 +12,7 @@ import java.util.Map;
 
 public final class RailSpeedManager extends WorldSavedData {
 
-    public static final String DATA_NAME = "aradu_rail_speed";
+    public static final String DATA_NAME = "arad_rail_speed";
 
     private final Map<String, Integer> speedMap = new LinkedHashMap<>();
 
