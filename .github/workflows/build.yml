@@ -3,11 +3,9 @@ name: Java CI with Gradle
 on:
   push:
     branches:
-      - main
       - 1.7.10
   pull_request:
     branches:
-      - main
       - 1.7.10
 
 jobs:
@@ -42,6 +40,6 @@ jobs:
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ARAD-forge
+          name: ARAD-forge-1.7.10
           path: |
             build/libs/*.jar
