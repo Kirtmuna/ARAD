@@ -1,6 +1,6 @@
 package jp.apple.arad.gui;
 
-// import jp.apple.gui.GuiAppleListSelector;
+import jp.apple.util.GuiAppleListSelector;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.inventory.GuiContainer;
 import org.lwjgl.opengl.GL11;
@@ -165,19 +165,18 @@ public class GuiSubStation extends GuiContainer {
         }
         final int initialIndex = currentIndex;
 
-        // GuiAppleListSelector selector = new GuiAppleListSelector(
-        // this,
-        // // btnParentDropdown.xPosition, btnParentDropdown.yPosition +
-        // btnParentDropdown.height,
-        // btnParentDropdown.width, 80,
-        // () -> initialIndex,
-        // names,
-        // (selectedIdx) -> {
-        // selectedParentId = stationOptions.get(selectedIdx).id;
-        // resolveParentName();
-        // rebuildButtons();
-        // });
-        // this.mc.displayGuiScreen(selector);
+        GuiAppleListSelector selector = new GuiAppleListSelector(
+                this,
+                btnParentDropdown.xPosition, btnParentDropdown.yPosition + btnParentDropdown.height,
+                btnParentDropdown.width, 80,
+                () -> initialIndex,
+                names,
+                (selectedIdx) -> {
+                    selectedParentId = stationOptions.get(selectedIdx).id;
+                    resolveParentName();
+                    rebuildButtons();
+                });
+        this.mc.displayGuiScreen(selector);
     }
 
     @Override
