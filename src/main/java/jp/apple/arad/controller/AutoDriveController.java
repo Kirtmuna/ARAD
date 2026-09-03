@@ -631,10 +631,7 @@ public final class AutoDriveController {
     }
 
     private void applyDoorState(Formation formation, byte doorData) {
-        for (FormationEntry e : formation.entries) {
-            if (e != null && e.train != null && !e.train.isDead)
-                e.train.setTrainStateData_NoSync(TrainState.TrainStateType.State_Door.id, doorData);
-        }
+        formation.setTrainStateData(TrainState.TrainStateType.State_Door.id, doorData, null);
     }
 
     private void setTarget(int notch) {
