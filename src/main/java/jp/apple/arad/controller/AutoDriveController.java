@@ -605,6 +605,14 @@ public final class AutoDriveController {
         odometerReady = false;
         state = DriveState.EN_ROUTE;
 
+        EntityTrainBase lead = getLeadTrain(formation);
+        if (lead != null && !lead.isDead) {
+            formation.setTrainStateData(
+                    TrainState.TrainStateType.State_Direction.id,
+                    TrainState.Direction_Front.data,
+                    lead);
+        }
+
         applyNotchDirect(formation, 0);
         targetNotch = 1;
         appliedNotch = 0;
@@ -620,11 +628,6 @@ public final class AutoDriveController {
             if (e.train != null)
                 e.train.setTrainStateData_NoSync(TrainState.TrainStateType.State_Notch.id, (byte) notch);
         }
-    }
-
-    private void applyRoleFront(EntityTrainBase lead) {
-        // lead.setVehicleState(TrainState.TrainStateType.Role,
-        // TrainState.Role_Front.data);
     }
 
     private void applyDoorState(Formation formation, byte doorData) {
@@ -1375,12 +1378,23 @@ public final class AutoDriveController {
                 ? stationIds.get(currentStationIdx)
                 : null;
         boolean turnback = isTurnbackStation(departedStationId, world);
-        if (turnback)
+        if (turnback) {
+            EntityTrainBase refCar = getLeadTrain(formation);
             reversed = !reversed;
+            if (refCar != null && !refCar.isDead) {
+                byte newDir = (byte) (1 - refCar.getTrainDirection());
+                formation.setTrainDirection(newDir, refCar);
+            }
+        }
+    }
 
-        EntityTrainBase lead = getLeadTrain(formation);
-        if (lead != null && !lead.isDead)
-            applyRoleFront(lead);
+    private void flipTrainDirection(Formation formation) {
+        for (FormationEntry e : formation.entries) {
+            if (e == null || e.train == null || e.train.isDead)
+                continue;
+            int cur = e.train.getTrainDirection();
+            e.train.setTrainDirection_NoSync((byte) (1 - cur));
+        }
     }
 
     private void updateSectionSlotProgress(EntityTrainBase lead) {
