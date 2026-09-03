@@ -109,8 +109,8 @@ public final class PacketSpeedLimit implements IMessage {
 
             } else {
 
-                // Minecraft.getMinecraft().addScheduledTask(() ->
-                // ClientSpeedLimitCache.INSTANCE.onDataReceived(msg.entries));
+                Minecraft.getMinecraft().func_152344_a(() -> 
+                        ClientSpeedLimitCache.INSTANCE.onDataReceived(msg.entries));
             }
             return null;
         }

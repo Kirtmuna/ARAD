@@ -77,8 +77,8 @@ public final class PacketSubStationData implements IMessage {
         @Override
         @SideOnly(Side.CLIENT)
         public IMessage onMessage(PacketSubStationData msg, MessageContext ctx) {
-            // Minecraft.getMinecraft().addScheduledTask(() ->
-            // SubStationRegistry.INSTANCE.loadFromSnapshots(msg.subStations));
+             Minecraft.getMinecraft().func_152344_a(() -> 
+                     SubStationRegistry.INSTANCE.loadFromSnapshots(msg.subStations));
             return null;
         }
     }
