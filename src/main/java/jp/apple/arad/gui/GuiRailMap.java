@@ -906,7 +906,7 @@ public final class GuiRailMap extends GuiScreen {
                 int sx = toSX(st.x), sz = toSZ(st.z);
                 if (Math.abs(mx - sx) <= STATION_HIT_R && Math.abs(my - sz) <= STATION_HIT_R) {
                     if (btn == 0) {
-                        if (pendingIds == null || !pendingIds.get(pendingIds.size() - 1).equals(st.id)) {
+                        if (pendingIds.isEmpty() || !pendingIds.get(pendingIds.size() - 1).equals(st.id)) {
                             pendingIds.add(st.id);
                         }
                     } else if (btn == 1)
