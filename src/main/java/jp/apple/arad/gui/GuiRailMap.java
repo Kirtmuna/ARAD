@@ -685,20 +685,14 @@ public final class GuiRailMap extends GuiScreen {
             if (offScreen(sx, sz, mapW))
                 continue;
             boolean isMe = p.name.equals(myName);
-            org.lwjgl.opengl.GL11.glDisable(org.lwjgl.opengl.GL11.GL_TEXTURE_2D);
-            GL11.glPointSize(isMe ? 10f : 6f);
-            GL11.glBegin(GL11.GL_POINTS);
-            if (isMe)
-                GL11.glColor4f(0.25f, 0.85f, 1f, 1f);
-            else
-                GL11.glColor4f(1f, 1f, 0.4f, 0.9f);
-            GL11.glVertex2i(sx, sz);
-            GL11.glEnd();
-            GL11.glPointSize(1f);
-            org.lwjgl.opengl.GL11.glEnable(org.lwjgl.opengl.GL11.GL_TEXTURE_2D);
+            int r = isMe ? 5 : 3;
+            int color = isMe ? 0xFF40D8FF : 0xFFFFFF66;
+
+            drawRect(sx - r, sz - r, sx + r + 1, sz + r + 1, color);
+
             String label = isMe ? "§b" + p.name : p.name;
             int lw = fontRendererObj.getStringWidth(p.name);
-            drawString(fontRendererObj, label, sx - lw / 2, sz + 7, isMe ? 0xFF7BC8FF : 0xFFFFFF66);
+            drawString(fontRendererObj, label, sx - lw / 2, sz + r + 2, isMe ? 0xFF7BC8FF : 0xFFFFFF66);
         }
     }
 
