@@ -1,7 +1,9 @@
 package jp.apple.arad.station;
 
 import jp.apple.arad.data.StationSnapshot;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
+import net.minecraft.world.chunk.Chunk;
 
 import java.util.*;
 
@@ -153,6 +155,40 @@ public final class StationRegistry {
             stationCache.remove(staleId);
             if (world != null && !world.isRemote) {
                 StationCacheStore.get(world).remove(staleId);
+            }
+        }
+    }
+
+    public void validateChunk(World world, Chunk chunk) {
+        if (world == null || world.isRemote)
+            return;
+
+        int dim = world.provider.getDimension();
+        List<StationSnapshot> toCheck = new ArrayList<>();
+        for (StationSnapshot s : stationCache.values()) {
+            if (s.dim != dim)
+                continue;
+            if ((toBlockCoord(s.x) >> 4) != chunk.x || (toBlockCoord(s.z) >> 4) != chunk.z)
+                continue;
+            toCheck.add(s);
+        }
+        if (toCheck.isEmpty())
+            return;
+
+        Collection<TileEntity> tes = chunk.getTileEntityMap().values();
+        for (StationSnapshot s : toCheck) {
+            int bx = toBlockCoord(s.x), bz = toBlockCoord(s.z);
+            boolean found = false;
+            for (TileEntity te : tes) {
+                if (!(te instanceof TileEntityStation))
+                    continue;
+                if (te.getPos().getX() == bx && te.getPos().getZ() == bz) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                removeFromCache(world, s.id);
             }
         }
     }
