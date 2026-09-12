@@ -67,4 +67,15 @@ public class BlockStation extends Block implements ITileEntityProvider {
     public BlockRenderLayer getBlockLayer() {
         return BlockRenderLayer.CUTOUT;
     }
+
+    @Override
+    public void breakBlock(World world, BlockPos pos, IBlockState state) {
+        if (!world.isRemote) {
+            TileEntity te = world.getTileEntity(pos);
+            if (te instanceof TileEntityStation) {
+                StationRegistry.INSTANCE.removeFromCache(world, ((TileEntityStation) te).getStationId());
+            }
+        }
+        super.breakBlock(world, pos, state);
+    }
 }
