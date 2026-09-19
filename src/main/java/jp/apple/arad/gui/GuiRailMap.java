@@ -685,7 +685,7 @@ public final class GuiRailMap extends GuiScreen {
             if (offScreen(sx, sz, mapW))
                 continue;
             boolean isMe = p.name.equals(myName);
-            int r = isMe ? 5 : 3;
+            int r = isMe ? 2 : 1;
             int color = isMe ? 0xFF40D8FF : 0xFFFFFF66;
 
             drawRect(sx - r, sz - r, sx + r + 1, sz + r + 1, color);
