@@ -28,12 +28,13 @@ import org.apache.logging.log4j.Logger;
 
 import static jp.apple.appleextended.AppleLib.tabAppleLib;
 
-@Mod(modid = "arad", name = "ARAD", version = "1.3.0", dependencies = "required-after:rtm")
+@Mod(modid = AradCore.MOD_ID, name = AradCore.MOD_NAME, version = AradCore.VERSION, dependencies = "required-after:rtm")
 
 public class AradCore {
 
-    public static final String MOD_ID = "arad";
-    public static final String MOD_NAME = "ARAD";
+    public static final String MOD_ID = Tags.MOD_ID;
+    public static final String MOD_NAME = Tags.MOD_NAME;
+    public static final String VERSION = Tags.VERSION;
 
     public static final Logger LOGGER = LogManager.getLogger(MOD_ID);
 
