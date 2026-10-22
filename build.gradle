@@ -126,7 +126,7 @@ repositories {
 
 dependencies {
 //  compileOnly fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'jp.apple:AppleExtended-forge1.12.2:2.5.2'
+    implementation 'jp.apple:AppleExtended-forge1.12.2:2.5.4'
     if (propertyBool('use_modern_java_syntax')) {
         annotationProcessor 'com.github.bsideup.jabel:jabel-javac-plugin:1.0.0'
         // Workaround for https://github.com/bsideup/jabel/issues/174
