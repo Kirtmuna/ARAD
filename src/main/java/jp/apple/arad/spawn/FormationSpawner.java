@@ -1,7 +1,7 @@
 package jp.apple.arad.spawn;
 
 import jp.apple.arad.station.TileEntityStation;
-import jp.apple.artpe.item.ItemArtpeTrain;
+import jp.apple.appleextended.artpe.item.ItemArtpeTrain;
 import jp.ngt.ngtlib.math.NGTMath;
 import jp.ngt.rtm.entity.train.util.FormationManager;
 import jp.ngt.rtm.rail.TileEntityLargeRailBase;

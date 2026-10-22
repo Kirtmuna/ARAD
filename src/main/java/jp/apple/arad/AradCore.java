@@ -26,7 +26,7 @@ import net.minecraftforge.fml.common.registry.GameRegistry;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import static jp.apple.AppleLib.tabAppleLib;
+import static jp.apple.appleextended.AppleLib.tabAppleLib;
 
 @Mod(modid = "arad", name = "ARAD", version = "1.3.0", dependencies = "required-after:rtm")
 

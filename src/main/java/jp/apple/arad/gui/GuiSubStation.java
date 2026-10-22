@@ -4,7 +4,7 @@ import jp.apple.arad.data.StationSnapshot;
 import jp.apple.arad.handler.AradPacketHandler;
 import jp.apple.arad.network.PacketSubStationConfig;
 import jp.apple.arad.substation.SubStationMode;
-import jp.apple.gui.GuiAppleListSelector;
+import jp.apple.appleextended.gui.GuiAppleListSelector;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.client.renderer.GlStateManager;
